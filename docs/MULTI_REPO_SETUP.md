@@ -1,135 +1,62 @@
-# my boss app — Multi-repo setup
+# my boss app — Local development guide
 
-Four separate Git repositories that work together. Clone them as **siblings** in one folder:
+Four projects that work together as a single product. Keep them as **sibling folders** on your machine — platform scripts expect to find the others next door.
 
 ```
 myboss-repos/
-├── myboss-mobile/      # Flutter employee app
-├── myboss-admin/       # React admin portal
-├── myboss-backend/     # NestJS microservices (5 services)
-└── myboss-platform/    # Docs, Docker Compose, deploy scripts
+├── myboss-mobile/      Flutter employee app
+├── myboss-admin/       React admin portal
+├── myboss-backend/     NestJS microservices (5 services)
+└── myboss-platform/    Docs, Docker, deploy scripts, nginx gateway
 ```
 
-The **parent folder is not a git repo** — keep it empty except for these four directories. Do not add README, `.env`, tunnel logs, or APK files at the parent level.
-
-| File type | Wrong (parent) | Correct location |
-|-----------|----------------|------------------|
-| Demo tunnel URL | `myboss-repos/demo-public-url.txt` | `myboss-platform/demo-public-url.txt` |
-| Tunnel log / pid | parent folder | `myboss-platform/` |
-| Docker `.env` | parent folder | `myboss-platform/.env` |
-| Backend dev `.env` | parent folder | `myboss-backend/.env` |
-| External APK | Desktop or parent | `myboss-mobile/build/android-dist/` (gitignored) |
-| Setup docs | parent README | This file in `myboss-platform/docs/` |
-
-### Gitignored files — all repos (create locally, never commit)
-
-These match each repo’s `.gitignore`. After `git clone`, create the **Required** items before first run.
-
-#### myboss-platform
-
-| Path | Required? | How to obtain |
-|------|-----------|---------------|
-| `.env` | **Yes** | `cp .env.example .env` — JWT + internal token for Docker |
-| `demo-public-url.txt` | Demo tunnel only | `./scripts/start-demo-tunnel.sh` |
-| `demo-tunnel.log` | Auto | Written by tunnel script |
-| `demo-tunnel*.pid` | Auto | PID file while tunnel runs |
-| `docker/data/` | Auto | Postgres volume data (Docker) |
-| `*.log` | Auto | Any script logs |
-
-**In git:** `.env.example`, `demo-public-url.example.txt`
-
-#### myboss-backend
-
-| Path | Required? | How to obtain |
-|------|-----------|---------------|
-| `.env` | **Yes** (npm dev) | `cp .env.example .env` — same secrets as platform |
-| `node_modules/` | **Yes** | `npm install` |
-| `libs/common/dist/`, `services/*/dist/` | Build | `npm run build -w @myboss/common && npm run build` |
-| `services/survey-service/data/` | Auto | SQLite file in survey service (local dev) |
-| `coverage/` | Auto | `npm test` output |
-| `**/tsconfig.tsbuildinfo` | Auto | TypeScript incremental cache |
-| `secrets/`, `*.pem`, `*.key` | Optional | Production certs — never commit |
-
-**In git:** `.env.example` only
-
-> Docker deploy reads **`myboss-platform/.env`**, not backend `.env`. Keep both aligned for local npm vs Docker.
-
-#### myboss-admin
-
-| Path | Required? | How to obtain |
-|------|-----------|---------------|
-| `.env.development` | **Yes** (Vite dev) | `cp .env.example .env.development` |
-| `.env.local-demo`, `.env.demo`, `.env.docker` | Optional | Custom builds — copy from `.env.example` |
-| `node_modules/` | **Yes** | `npm install` |
-| `dist/` | Build | `npm run build` or `npm run build:demo` |
-| `coverage/` | Auto | Test output |
-| `**/tsconfig.tsbuildinfo` | Auto | TypeScript cache |
-
-**In git:** `.env.example`
-
-#### myboss-mobile
-
-| Path | Required? | How to obtain |
-|------|-----------|---------------|
-| `.dart_tool/`, `.packages` | **Yes** | `fvm flutter pub get` |
-| `build/` (APK, web) | Build | `./build-external-android.sh` or `fvm flutter build web` |
-| `lib/gen/` | **Yes** | `fvm flutter gen-l10n` |
-| `**/*.g.dart`, `*.freezed.dart` | If used | `dart run build_runner build` |
-| `demo-public-url.txt` | External APK | Copied from platform tunnel URL for builds |
-| `.env` | Optional | `cp .env.example .env` if you use env-based config |
-| `android/local.properties` | Android | Created by Android Studio (SDK path) |
-| `android/.gradle/`, `ios/Pods/` | Auto | Gradle / CocoaPods caches |
-| `.flutter-plugins*` | Auto | After `pub get` |
-
-**In git:** `demo_credentials.dart` (demo emails only), `.env.example`
-
-Per-repo details: [backend README](../../myboss-backend/README.md#files-not-in-git) · [admin README](../../myboss-admin/README.md#files-not-in-git) · [mobile README](../../myboss-mobile/README.md#files-not-in-git) · [platform README](../README.md#files-not-in-git)
-
-| Repo | GitHub |
-|------|--------|
-| myboss-mobile | https://github.com/areejobaid17894-blip/myboss-mobile |
-| myboss-admin | https://github.com/areejobaid17894-blip/myboss-admin |
-| myboss-backend | https://github.com/areejobaid17894-blip/myboss-backend |
-| myboss-platform | https://github.com/areejobaid17894-blip/myboss-platform |
+Each project has its own README with deeper detail. This guide covers the full stack end to end.
 
 ---
 
-## 1. One-time installation (all developers)
+## What goes where
 
-Install these once on your machine:
+Runtime files belong **inside** the project that owns them — not in the parent folder.
+
+| Artifact | Location |
+|----------|----------|
+| Docker secrets & config | `myboss-platform/.env` |
+| Backend dev secrets | `myboss-backend/.env` |
+| Admin Vite config | `myboss-admin/.env.development` |
+| Tunnel public URL | `myboss-platform/demo-public-url.txt` |
+| Tunnel logs | `myboss-platform/demo-tunnel.log` |
+| Built APK | `myboss-mobile/build/android-dist/` |
+| Setup documentation | `myboss-platform/docs/` |
+
+---
+
+## Install once
 
 | Tool | Version | Install |
 |------|---------|---------|
-| **Git** | Latest | [git-scm.com](https://git-scm.com/) |
-| **Node.js** | **20 LTS** | [nodejs.org](https://nodejs.org/) or `nvm install 20` |
+| **Node.js** | 20 LTS | [nodejs.org](https://nodejs.org/) or `nvm install 20` |
 | **npm** | 10+ | Bundled with Node 20 |
 | **Docker Desktop** | 24+ (Compose v2) | [docker.com](https://www.docker.com/products/docker-desktop/) |
-| **Flutter** | **3.35.7** | [FVM](https://fvm.app): `brew install fvm && fvm install 3.35.7` |
-| **Android Studio** | Latest | For Android emulator / APK builds |
+| **Flutter** | 3.35.7 | [FVM](https://fvm.app): `brew install fvm && fvm install 3.35.7` |
+| **Android Studio** | Latest | Emulator and APK builds |
 | **cloudflared** | Optional | `brew install cloudflared` — public demo URL |
 
-### Clone all four repos
+Place all four projects in one folder (e.g. `~/Desktop/myboss-repos/`).
 
-```bash
-mkdir -p ~/Desktop/myboss-repos && cd ~/Desktop/myboss-repos
+---
 
-git clone https://github.com/areejobaid17894-blip/myboss-backend.git
-git clone https://github.com/areejobaid17894-blip/myboss-admin.git
-git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
-git clone https://github.com/areejobaid17894-blip/myboss-platform.git
-```
+## Environment setup
 
-### Environment files (required before first run)
+Before the first run, copy the example env files and generate secrets.
 
-**Platform** (used by Docker deploy):
+**Platform** (Docker deploy reads this):
 
 ```bash
 cd myboss-platform
 cp .env.example .env
-# Edit JWT_SECRET and INTERNAL_SERVICE_TOKEN (see below)
 ```
 
-**Backend** (used by `npm run start:dev` without Docker):
+**Backend** (only if you run services via npm, not Docker):
 
 ```bash
 cd ../myboss-backend
@@ -137,7 +64,7 @@ cp .env.example .env
 # Use the same JWT_SECRET and INTERNAL_SERVICE_TOKEN as platform
 ```
 
-**Admin** (used by Vite dev server):
+**Admin** (Vite dev server):
 
 ```bash
 cd ../myboss-admin
@@ -151,45 +78,80 @@ openssl rand -base64 48   # JWT_SECRET
 openssl rand -base64 32   # INTERNAL_SERVICE_TOKEN
 ```
 
+### Local files you'll create over time
+
+**Platform**
+
+| File | Required? | How |
+|------|-----------|-----|
+| `.env` | Yes | `cp .env.example .env` |
+| `demo-public-url.txt` | Tunnel demos | `./scripts/start-demo-tunnel.sh` |
+| `demo-tunnel.log`, `demo-tunnel*.pid` | Auto | Tunnel script |
+| `docker/data/` | Auto | Postgres when Docker runs |
+
+**Backend**
+
+| File | Required? | How |
+|------|-----------|-----|
+| `.env` | npm dev only | `cp .env.example .env` |
+| `node_modules/` | Yes | `npm install` |
+| `dist/` folders | Build | `npm run build` |
+| `services/survey-service/data/` | Auto | SQLite at runtime |
+
+**Admin**
+
+| File | Required? | How |
+|------|-----------|-----|
+| `.env.development` | Vite dev | `cp .env.example .env.development` |
+| `node_modules/` | Yes | `npm install` |
+| `dist/` | Build | `npm run build` |
+
+**Mobile**
+
+| File | Required? | How |
+|------|-----------|-----|
+| `.dart_tool/` | Yes | `fvm flutter pub get` |
+| `lib/gen/` | Yes | `fvm flutter gen-l10n` |
+| `build/` | Build | APK or web scripts |
+| `demo-public-url.txt` | External APK | From platform tunnel |
+| `android/local.properties` | Android | Android Studio |
+
+Per-project READMEs: [backend](../../myboss-backend/README.md) · [admin](../../myboss-admin/README.md) · [mobile](../../myboss-mobile/README.md) · [platform](../README.md)
+
 ---
 
-## 2. Run locally — full demo stack (recommended)
+## Run the full demo stack
 
-This starts backend + admin in Docker, builds mobile web, and serves everything on **port 8090**.
+Starts backend + admin in Docker, builds mobile web, serves everything on **port 8090**. This is what you want for integration testing or showing the product.
 
 ```bash
 cd myboss-platform
 chmod +x scripts/*.sh
 
-# Step 1 — backend + admin containers
 ./scripts/deploy-demo-server.sh 127.0.0.1
-
-# Step 2 — Flutter web at /app/ + nginx gateway
 ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 
-# Step 3 — verify
 ./scripts/verify-backend.sh
 ./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 | URL | Purpose |
 |-----|---------|
-| http://127.0.0.1:8090/app/ | Mobile web (employee app) |
+| http://127.0.0.1:8090/app/ | Mobile web |
 | http://127.0.0.1:8090/login | Admin console |
 | http://127.0.0.1:8090/auth/api/v1/docs | Swagger (auth) |
-| http://127.0.0.1:8081 | Admin direct (optional; prefer gateway) |
 
-**Admin login:** `admin@orange.com` / `admin123` → OTP (auto in demo mode)
+**Admin:** `admin@orange.com` / `admin123` → OTP (auto in demo mode)
 
-**Mobile login:** `demo@orange.com` → OTP → accept Terms & Conditions
+**Mobile:** `demo@orange.com` → OTP → accept Terms & Conditions
 
-**Reset demo data** before team testing:
+Reset demo data before a team session:
 
 ```bash
 ./scripts/reset-demo-data.sh
 ```
 
-**Stop everything:**
+Stop everything:
 
 ```bash
 ./scripts/stop-demo-server.sh
@@ -198,104 +160,76 @@ docker stop myboss-api-gateway 2>/dev/null || true
 
 ---
 
-## 3. Run locally — each project separately
+## Run one project at a time
 
-Use this when you are developing one app and want hot reload.
+Use this when you're developing a single app with hot reload.
 
-### Backend only (Node, no Docker)
+### Backend (Node)
 
 ```bash
 cd myboss-backend
 npm install
 npm run build -w @myboss/common
-npm run start:dev          # all 5 services on :3001–3005
+npm run start:dev
 ```
 
-Verify: `./scripts/verify-backend.sh` from **myboss-platform**, or:
+Health check: `curl http://localhost:3001/api/v1/health`
 
-```bash
-curl http://localhost:3001/api/v1/health
-```
+→ [backend README](../../myboss-backend/README.md)
 
-Details: [myboss-backend/README.md](myboss-backend/README.md)
+### Admin (Vite)
 
-### Admin only (Vite dev server)
-
-Start backend first (Docker or npm above), then:
+Start backend first, then:
 
 ```bash
 cd myboss-admin
 npm install
-cp .env.example .env.development   # if not done yet
+cp .env.example .env.development
 npm run dev
 ```
 
-Open: http://localhost:5173
+Open http://localhost:5173
 
-Details: [myboss-admin/README.md](myboss-admin/README.md)
+→ [admin README](../../myboss-admin/README.md)
 
-### Mobile only (Flutter)
+### Mobile (Flutter)
 
 Start backend/gateway first, then:
 
 ```bash
 cd myboss-mobile
-fvm install 3.35.7    # first time only
 fvm flutter pub get
 fvm flutter gen-l10n
 fvm flutter run --dart-define=DEMO_MODE=true
 ```
 
-**Web dev** (hot reload on :8092, API via gateway :8090):
+Web hot reload: `./run-local-web.sh` (gateway must be on :8090)
 
-```bash
-./run-local-web.sh
-```
+Android emulator: add `--dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090`
 
-**Android emulator** (backend on host):
-
-```bash
-fvm flutter run --dart-define=DEMO_MODE=true --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090
-```
-
-Details: [myboss-mobile/README.md](myboss-mobile/README.md)
+→ [mobile README](../../myboss-mobile/README.md)
 
 ---
 
-## 4. Deploy live (demo server / event)
+## Demo server / event deploy
 
-For a VM (Ubuntu 22.04+, 4 vCPU, 8 GB RAM recommended):
+Target: Ubuntu 22.04+, 4 vCPU, 8 GB RAM, Docker installed.
 
-### One-time server setup
-
-```bash
-# Install Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-# Log out and back in
-
-# Clone all four repos as siblings
-sudo mkdir -p /opt/myboss && cd /opt/myboss
-sudo git clone https://github.com/areejobaid17894-blip/myboss-backend.git
-sudo git clone https://github.com/areejobaid17894-blip/myboss-admin.git
-sudo git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
-sudo git clone https://github.com/areejobaid17894-blip/myboss-platform.git
-sudo chown -R $USER:$USER /opt/myboss
-```
-
-Or use the helper script:
+**One-time setup:**
 
 ```bash
 cd myboss-platform
 ./scripts/install-demo-server.sh /opt/myboss
 ```
 
-### Configure & deploy
+Places all four projects under `/opt/myboss/`.
+
+**Deploy:**
 
 ```bash
 cd /opt/myboss/myboss-platform
 cp .env.example .env
-nano .env   # set JWT_SECRET, INTERNAL_SERVICE_TOKEN, DEMO_HOST=<server-public-ip>
+# JWT_SECRET, INTERNAL_SERVICE_TOKEN, DEMO_HOST=<public-ip>
 
 chmod +x scripts/*.sh
 ./scripts/deploy-demo-server.sh <SERVER_IP>
@@ -307,37 +241,36 @@ ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 
 ```bash
 ./scripts/start-demo-tunnel.sh
-# URL saved to demo-public-url.txt (not in git)
 ```
 
-Share with testers:
+URL saved to `demo-public-url.txt`. Share:
+
 - Mobile: `https://<tunnel>/app/`
 - Admin: `https://<tunnel>/login`
 
-**Error 1033?** Tunnel stopped — restart script and use the new URL. See [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md).
+**Error 1033?** The tunnel process stopped — restart the script and share the new URL. See [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md).
 
-### External Android APK (mobile data)
+### External Android APK
 
 ```bash
 cd myboss-mobile
 ./build-external-android.sh
-# → build/android-dist/myboss-demo-external.apk (email to testers)
+# → build/android-dist/myboss-demo-external.apk
 ```
 
 ### Demo vs production gateway
 
 | Demo | Production |
 |------|------------|
-| nginx `:8090` | **Orange Apigee** |
+| nginx `:8090` | Orange **Apigee** |
 | Same API paths | Same API paths |
 
-Read: [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md)
-
-Full production guide: [`devops/DEVOPS.md`](devops/DEVOPS.md)
+→ [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md)  
+→ Production: [`devops/DEVOPS.md`](devops/DEVOPS.md)
 
 ---
 
-## 5. Demo test accounts
+## Demo test accounts
 
 OTP auto-fills when `DEMO_MODE=true`.
 
@@ -349,13 +282,13 @@ OTP auto-fills when `DEMO_MODE=true`.
 | `laila.m@orange.com` | Incomplete onboarding |
 | `admin@orange.com` | Admin console |
 
-After OTP on mobile: **Terms & conditions** must be accepted.
+Mobile users must accept Terms & conditions after OTP.
 
 ---
 
-## 6. Override sibling paths
+## Custom folder layout
 
-If repos are not siblings, export before running platform scripts:
+If the four projects aren't siblings, tell platform scripts where to look:
 
 ```bash
 export MYBOSS_BACKEND_DIR=/path/to/myboss-backend
@@ -365,13 +298,15 @@ export MYBOSS_MOBILE_DIR=/path/to/myboss-mobile
 
 ---
 
-## 7. Documentation index
+## Documentation index
 
 | Doc | Location |
 |-----|----------|
-| Full docs index | [myboss-platform/docs/README.md](myboss-platform/docs/README.md) |
-| DevOps / deploy | [myboss-platform/docs/devops/DEVOPS.md](myboss-platform/docs/devops/DEVOPS.md) |
-| Database & seed | [myboss-platform/docs/database/DATABASE.md](myboss-platform/docs/database/DATABASE.md) |
-| Android Studio | [myboss-platform/docs/mobile/ANDROID_STUDIO.md](myboss-platform/docs/mobile/ANDROID_STUDIO.md) |
+| Docs index | [docs/README.md](README.md) |
+| DevOps / deploy | [docs/devops/DEVOPS.md](devops/DEVOPS.md) |
+| Database & seed | [docs/database/DATABASE.md](database/DATABASE.md) |
+| Android Studio | [docs/mobile/ANDROID_STUDIO.md](mobile/ANDROID_STUDIO.md) |
+| Tunnel + APK | [docs/deployment/DEMO_TUNNEL_AND_APK.md](deployment/DEMO_TUNNEL_AND_APK.md) |
+| Apigee vs nginx | [docs/architecture/APIGEE_VS_NGINX.md](architecture/APIGEE_VS_NGINX.md) |
 
-Per-app READMEs: [myboss-backend](myboss-backend/README.md) · [myboss-admin](myboss-admin/README.md) · [myboss-mobile](myboss-mobile/README.md) · [myboss-platform](myboss-platform/README.md)
+Per-app READMEs: [backend](../../myboss-backend/README.md) · [admin](../../myboss-admin/README.md) · [mobile](../../myboss-mobile/README.md) · [platform](../README.md)
