@@ -1,0 +1,97 @@
+# Demo stack — run from myboss-platform with sibling repos:
+#   export MYBOSS_BACKEND_DIR=../myboss-backend
+#   export MYBOSS_ADMIN_DIR=../myboss-admin
+#   docker compose -f docker/docker-compose.demo.yml up -d --build
+#
+# Default: expects myboss-backend and myboss-admin as siblings of myboss-platform.
+
+x-backend: &backend_ctx
+  context: ${MYBOSS_BACKEND_DIR:-../myboss-backend}
+
+services:
+  auth-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.auth
+    container_name: myboss-auth
+    restart: unless-stopped
+    ports: ['3001:3001']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
+      USER_SERVICE_URL: http://user-service:3002/api/v1
+
+  user-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.user
+    container_name: myboss-user
+    restart: unless-stopped
+    ports: ['3002:3002']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
+      CONFIG_SERVICE_URL: http://config-service:3003/api/v1/config/employee-settings
+
+  config-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.config
+    container_name: myboss-config
+    restart: unless-stopped
+    ports: ['3003:3003']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+
+  squad-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.squad
+    container_name: myboss-squad
+    restart: unless-stopped
+    ports: ['3004:3004']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
+      USER_SERVICE_URL: http://user-service:3002/api/v1
+      SURVEY_SERVICE_URL: http://survey-service:3005/api/v1
+
+  survey-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.survey
+    container_name: myboss-survey
+    restart: unless-stopped
+    ports: ['3005:3005']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+      USER_SERVICE_URL: http://user-service:3002/api/v1
+      DEMO_GALLERY_FILE: /app/data/demo-gallery.json
+      DEMO_GALLERY_TZ: Asia/Amman
+    volumes:
+      - myboss-demo-gallery:/app/data
+
+  admin-portal:
+    build:
+      context: ${MYBOSS_ADMIN_DIR:-../myboss-admin}
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_MODE: local-demo
+        DEMO_HOST: ${DEMO_HOST:-localhost}
+    container_name: myboss-admin
+    restart: unless-stopped
+    ports: ['8081:80']
+    profiles: [with-admin]
+
+volumes:
+  myboss-demo-gallery:
