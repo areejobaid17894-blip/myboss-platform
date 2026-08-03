@@ -203,13 +203,16 @@ All deploy scripts require `ALLOW_DEPLOY=1` only for `deploy-mobile-web.sh`.
 
 ## Files NOT in git
 
-| File | How to obtain |
-|------|---------------|
-| `.env` | `cp .env.example .env` |
-| `demo-public-url.txt` | `./scripts/start-demo-tunnel.sh` |
-| `demo-tunnel.log` | Created by tunnel script |
+| File / folder | Required? | How to obtain |
+|---------------|-----------|---------------|
+| `.env` | **Yes** | `cp .env.example .env` |
+| `demo-public-url.txt` | Tunnel demo | `./scripts/start-demo-tunnel.sh` |
+| `demo-tunnel.log` | Auto | Created by tunnel script |
+| `demo-tunnel*.pid` | Auto | PID while tunnel runs |
+| `docker/data/` | Auto | Docker Postgres volume |
+| `*.log` | Auto | Script / tunnel logs |
 
-**Safe in git:** `.env.example`, `demo-public-url.example.txt`
+**In git:** `.env.example`, `demo-public-url.example.txt`
 
 ---
 

@@ -7,9 +7,83 @@ myboss-repos/
 ├── myboss-mobile/      # Flutter employee app
 ├── myboss-admin/       # React admin portal
 ├── myboss-backend/     # NestJS microservices (5 services)
-├── myboss-platform/    # Docs, Docker Compose, deploy scripts
-└── README.md           # ← you are here
+└── myboss-platform/    # Docs, Docker Compose, deploy scripts
 ```
+
+The **parent folder is not a git repo** — keep it empty except for these four directories. Do not add README, `.env`, tunnel logs, or APK files at the parent level.
+
+| File type | Wrong (parent) | Correct location |
+|-----------|----------------|------------------|
+| Demo tunnel URL | `myboss-repos/demo-public-url.txt` | `myboss-platform/demo-public-url.txt` |
+| Tunnel log / pid | parent folder | `myboss-platform/` |
+| Docker `.env` | parent folder | `myboss-platform/.env` |
+| Backend dev `.env` | parent folder | `myboss-backend/.env` |
+| External APK | Desktop or parent | `myboss-mobile/build/android-dist/` (gitignored) |
+| Setup docs | parent README | This file in `myboss-platform/docs/` |
+
+### Gitignored files — all repos (create locally, never commit)
+
+These match each repo’s `.gitignore`. After `git clone`, create the **Required** items before first run.
+
+#### myboss-platform
+
+| Path | Required? | How to obtain |
+|------|-----------|---------------|
+| `.env` | **Yes** | `cp .env.example .env` — JWT + internal token for Docker |
+| `demo-public-url.txt` | Demo tunnel only | `./scripts/start-demo-tunnel.sh` |
+| `demo-tunnel.log` | Auto | Written by tunnel script |
+| `demo-tunnel*.pid` | Auto | PID file while tunnel runs |
+| `docker/data/` | Auto | Postgres volume data (Docker) |
+| `*.log` | Auto | Any script logs |
+
+**In git:** `.env.example`, `demo-public-url.example.txt`
+
+#### myboss-backend
+
+| Path | Required? | How to obtain |
+|------|-----------|---------------|
+| `.env` | **Yes** (npm dev) | `cp .env.example .env` — same secrets as platform |
+| `node_modules/` | **Yes** | `npm install` |
+| `libs/common/dist/`, `services/*/dist/` | Build | `npm run build -w @myboss/common && npm run build` |
+| `services/survey-service/data/` | Auto | SQLite file in survey service (local dev) |
+| `coverage/` | Auto | `npm test` output |
+| `**/tsconfig.tsbuildinfo` | Auto | TypeScript incremental cache |
+| `secrets/`, `*.pem`, `*.key` | Optional | Production certs — never commit |
+
+**In git:** `.env.example` only
+
+> Docker deploy reads **`myboss-platform/.env`**, not backend `.env`. Keep both aligned for local npm vs Docker.
+
+#### myboss-admin
+
+| Path | Required? | How to obtain |
+|------|-----------|---------------|
+| `.env.development` | **Yes** (Vite dev) | `cp .env.example .env.development` |
+| `.env.local-demo`, `.env.demo`, `.env.docker` | Optional | Custom builds — copy from `.env.example` |
+| `node_modules/` | **Yes** | `npm install` |
+| `dist/` | Build | `npm run build` or `npm run build:demo` |
+| `coverage/` | Auto | Test output |
+| `**/tsconfig.tsbuildinfo` | Auto | TypeScript cache |
+
+**In git:** `.env.example`
+
+#### myboss-mobile
+
+| Path | Required? | How to obtain |
+|------|-----------|---------------|
+| `.dart_tool/`, `.packages` | **Yes** | `fvm flutter pub get` |
+| `build/` (APK, web) | Build | `./build-external-android.sh` or `fvm flutter build web` |
+| `lib/gen/` | **Yes** | `fvm flutter gen-l10n` |
+| `**/*.g.dart`, `*.freezed.dart` | If used | `dart run build_runner build` |
+| `demo-public-url.txt` | External APK | Copied from platform tunnel URL for builds |
+| `.env` | Optional | `cp .env.example .env` if you use env-based config |
+| `android/local.properties` | Android | Created by Android Studio (SDK path) |
+| `android/.gradle/`, `ios/Pods/` | Auto | Gradle / CocoaPods caches |
+| `.flutter-plugins*` | Auto | After `pub get` |
+
+**In git:** `demo_credentials.dart` (demo emails only), `.env.example`
+
+Per-repo details: [backend README](../../myboss-backend/README.md#files-not-in-git) · [admin README](../../myboss-admin/README.md#files-not-in-git) · [mobile README](../../myboss-mobile/README.md#files-not-in-git) · [platform README](../README.md#files-not-in-git)
 
 | Repo | GitHub |
 |------|--------|
