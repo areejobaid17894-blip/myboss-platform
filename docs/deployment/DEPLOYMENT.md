@@ -16,17 +16,17 @@
 From repo root:
 
 ```bash
-chmod +x infrastructure/scripts/*.sh
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
-./infrastructure/scripts/stop-demo-server.sh
+chmod +x scripts/*.sh
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
+./scripts/stop-demo-server.sh
 ```
 
 **Documentation:** [`docs/api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`docs/api/CHAT_API.md`](api/CHAT_API.md)
 
-Docker files: `infrastructure/docker/` — see `infrastructure/docker/README.md`
+Docker files: `docker/` — see `docker/README.md`
 
 ## Overview
 
@@ -65,48 +65,39 @@ GitHub Actions CI/CD
 
 ### Docker Images
 
-Each service builds an independent Docker image from **`infrastructure/docker/`**:
+Each service builds an independent Docker image from **`docker/`**:
 
 ```bash
 # From repo root — build all demo services
-docker compose -f infrastructure/docker/docker-compose.demo.yml up -d --build
+docker compose -f docker/docker-compose.demo.yml up -d --build
 
 # Or build one service
-docker build -f infrastructure/docker/Dockerfile.auth -t myboss/auth-service:latest .
-docker build -f infrastructure/docker/Dockerfile.user -t myboss/user-service:latest .
-docker build -f infrastructure/docker/Dockerfile.config -t myboss/config-service:latest .
-docker build -f infrastructure/docker/Dockerfile.squad -t myboss/squad-service:latest .
-docker build -f infrastructure/docker/Dockerfile.survey -t myboss/survey-service:latest .
+docker build -f docker/Dockerfile.auth -t myboss/auth-service:latest .
+docker build -f docker/Dockerfile.user -t myboss/user-service:latest .
+docker build -f docker/Dockerfile.config -t myboss/config-service:latest .
+docker build -f docker/Dockerfile.squad -t myboss/squad-service:latest .
+docker build -f docker/Dockerfile.survey -t myboss/survey-service:latest .
 ```
 
-### Kubernetes (Production-ready manifests)
+### Kubernetes (planned — not in platform repo yet)
 
-Manifests in `infrastructure/kubernetes/`:
+Production K8s manifests are **planned**; demo uses Docker Compose from `myboss-platform/docker/`. When added, they will live in `myboss-platform/kubernetes/` or a dedicated ops repo.
 
+<!--
+Legacy reference layout:
 ```
 kubernetes/
-├── base/                    # Shared base configs
-│   ├── auth-service/
-│   ├── user-service/
-│   └── config-service/
-└── overlays/
-    ├── demo/
-    ├── uat/
-    └── production/
+├── base/
+└── overlays/demo|uat|production
 ```
-
-Deploy with Kustomize:
-
-```bash
-kubectl apply -k infrastructure/kubernetes/overlays/demo
-```
+-->
 
 ## Admin Portal Deployment
 
 Static build deployed to web server or CDN:
 
 ```bash
-cd apps/admin-portal
+cd myboss-admin
 npm run build:demo    # or build:uat, build:production
 # Output: dist/ → deploy to hosting
 ```
@@ -114,18 +105,21 @@ npm run build:demo    # or build:uat, build:production
 ## Mobile App Deployment
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
 
 # Android demo APK (physical device — probes LAN + tunnel at startup)
 ./build-local-android.sh
-# Output: build/android-dist/myboss-demo-<lan-ip>.apk
+
+# External APK (mobile data — tunnel URL required in ../myboss-platform/demo-public-url.txt)
+./build-external-android.sh
+# Output: build/android-dist/myboss-demo-external.apk
 
 # iOS demo build (requires Xcode + Apple ID for device install)
 ./build-demo-ios.sh --ipa
 
 # Mobile web for gateway /app/
 ./build-demo-web.sh
-ALLOW_DEPLOY=1 ../../infrastructure/scripts/deploy-mobile-web.sh
+ALLOW_DEPLOY=1 ../../scripts/deploy-mobile-web.sh
 ```
 
 Dart defines for demo builds:
@@ -136,7 +130,7 @@ Dart defines for demo builds:
 | `GATEWAY_ORIGIN=http://<host>:8090` | Primary gateway URL |
 | `API_HOSTS=host1,host2` | Fallback hosts (LAN + tunnel) |
 
-See [`apps/mobile/README.md`](../../apps/mobile/README.md).
+See [`myboss-mobile/README.md`](../../myboss-mobile/README.md).
 
 ## Environment Variables
 
@@ -152,7 +146,7 @@ Never commit secrets. Use:
 ## Database Migrations
 
 ```bash
-cd apps/backend
+cd myboss-backend
 npm run migration:run -- --env=demo
 ```
 

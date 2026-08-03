@@ -14,7 +14,8 @@ Central index for all project documentation.
 | **Mobile** | [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | [`EMPLOYEE_JOURNEY_COVERAGE.md`](EMPLOYEE_JOURNEY_COVERAGE.md) |
 | **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [`../../myboss-admin/README.md`](../../myboss-admin/README.md) |
 | **Security** | [`security/SECURITY.md`](security/SECURITY.md) | [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
-| **Apigee** | [`deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md) |
+| **Apigee / API Platform** | [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md) | [`deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) |
+| **External demo / APK** | [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md) | Error 1033, Cloudflare tunnel |
 | **QA / Testing** | [`deployment/pdf/04_TESTING_GUIDE.md`](deployment/pdf/04_TESTING_GUIDE.md) | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) |
 
 ---
@@ -37,6 +38,20 @@ In-memory data changes during testing. Reset squads, terms acceptance, and seed 
 | `admin@orange.com` | Admin console |
 
 Seed IDs: `myboss-backend/libs/common/src/demo/demo-seed.constants.ts` · Full matrix: [`database/DATABASE.md` §7](database/DATABASE.md#7-demo-seed-accounts)
+
+---
+
+## Demo vs production gateway
+
+| Demo (now) | Production (target) |
+|------------|---------------------|
+| nginx on `:8090` | **Orange Apigee** |
+| Cloudflare quick tunnel (optional) | Apigee public URL |
+| Same API paths: `/auth/api/v1`, `/user/api/v1`, … | Same paths |
+
+Read: [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md)
+
+**External testers:** [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md) — tunnel, Error 1033, external APK
 
 ---
 
@@ -64,6 +79,7 @@ docs/
 │   └── CHAT_API.md              ← Squad chat API
 │
 ├── architecture/
+│   ├── APIGEE_VS_NGINX.md       ← Demo nginx vs production Apigee
 │   ├── ARCHITECTURE.md          ← System design (technical)
 │   ├── HLD.md                   ← High-level (stakeholders)
 │   ├── GOVERNANCE.md            ← Orange errors, Apigee, roles
@@ -74,6 +90,7 @@ docs/
 │
 ├── deployment/
 │   ├── DEPLOYMENT.md            ← Environment matrix
+│   ├── DEMO_TUNNEL_AND_APK.md   ← Tunnel, Error 1033, external APK
 │   ├── ENVIRONMENT_SETUP.md     ← Local dev (all apps)
 │   ├── IOS-URGENT-BUILD.md      ← iOS without local Xcode (supplementary)
 │   └── pdf/                     ← Printable guides for Apigee & QA
@@ -129,7 +146,7 @@ Each app README lists **prerequisites**, **start steps**, **pinned versions**, a
 
 | Committed (safe) | Ignored (never push) |
 |------------------|----------------------|
-| `.env.example`, `apps/admin-portal/.env.example` | `.env`, `.env.development`, `.env.demo`, … |
+| `.env.example`, `myboss-admin/.env.example` | `.env`, `.env.development`, `.env.demo`, … |
 | Source code, docs, Dockerfiles, lockfiles | `node_modules/`, `build/`, `dist/`, APK |
 | `demo-public-url.example.txt` (template) | `demo-public-url.txt` (live tunnel URL) |
 | | `**/tsconfig.tsbuildinfo`, secrets (`*.pem`, `*.key`) |

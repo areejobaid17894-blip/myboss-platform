@@ -9,16 +9,16 @@
 
 ```bash
 # Reset demo data before a test cycle (squads, terms, seed users)
-./infrastructure/scripts/reset-demo-data.sh
+./scripts/reset-demo-data.sh
 
 # Gateway + JWT + Swagger + chat
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 
 # Full localhost (squad, chat send/reply, surveys)
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-localhost.sh
 
 # Backend health only
-./infrastructure/scripts/verify-backend.sh
+./scripts/verify-backend.sh
 ```
 
 ---
@@ -159,7 +159,7 @@ Expected: JSON array with `Orange Amman Squad` and other demo squads.
 ## 9. Backend unit tests
 
 ```bash
-cd apps/backend
+cd myboss-backend
 npm run test:auth
 npm run test:user
 npm run test:config

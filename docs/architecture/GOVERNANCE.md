@@ -15,7 +15,7 @@
 ## Architecture
 
 ```
-Mobile / Admin  →  Apigee (or nginx gateway :8090)  →  Microservices
+Mobile / Admin  →  Apigee (production) or nginx gateway :8090 (demo)  →  Microservices
                          │
                          ├── /auth/api/v1/**   → auth-service   :3001
                          ├── /user/api/v1/**   → user-service   :3002
@@ -23,6 +23,8 @@ Mobile / Admin  →  Apigee (or nginx gateway :8090)  →  Microservices
                          ├── /squad/api/v1/**  → squad-service  :3004
                          └── /survey/api/v1/** → survey-service :3005
 ```
+
+**Demo vs production:** nginx on `:8090` is a **stand-in for Apigee** during development. Production uses Orange Apigee with the **same path structure**. See [`APIGEE_VS_NGINX.md`](APIGEE_VS_NGINX.md).
 
 Each service exposes:
 
@@ -132,10 +134,10 @@ Do **not** commit compiled `.js` files under `libs/common/src/` — TypeScript o
 
 ```bash
 # Gateway smoke (includes squad browse)
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-localhost.sh
 
 # Mobile API via gateway
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 Swagger (direct): `http://localhost:3001/api/v1/docs` … `3005`.

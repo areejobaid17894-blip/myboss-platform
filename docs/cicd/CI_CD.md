@@ -27,9 +27,9 @@ Each application has an independent CI/CD pipeline triggered on push/PR to relev
 
 | Workflow | Trigger | Path Filter |
 |---|---|---|
-| `mobile-ci.yml` | Push/PR to `main`, `develop` | `apps/mobile/**` |
-| `backend-ci.yml` | Push/PR to `main`, `develop` | `apps/backend/**` |
-| `admin-portal-ci.yml` | Push/PR to `main`, `develop` | `apps/admin-portal/**` |
+| `mobile-ci.yml` | Push/PR to `main`, `develop` | `myboss-mobile/**` |
+| `backend-ci.yml` | Push/PR to `main`, `develop` | `myboss-backend/**` |
+| `admin-portal-ci.yml` | Push/PR to `main`, `develop` | `myboss-admin/**` |
 
 ## Mobile Pipeline (`mobile-ci.yml`)
 
@@ -90,13 +90,13 @@ Run the same checks locally before pushing:
 
 ```bash
 # Backend
-cd apps/backend && npm run lint && npm test
+cd myboss-backend && npm run lint && npm test
 
 # Admin Portal
-cd apps/admin-portal && npm run lint && npm test && npm run build
+cd myboss-admin && npm run lint && npm test && npm run build
 
 # Mobile
-cd apps/mobile && flutter analyze && flutter test
+cd myboss-mobile && flutter analyze && flutter test
 ```
 
 ---

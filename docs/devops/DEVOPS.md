@@ -12,10 +12,10 @@
 | Component | Version | Where defined |
 |-----------|---------|---------------|
 | **Node.js** | **20 LTS** (`node:20-alpine`) | Dockerfiles, GitHub Actions |
-| **TypeScript (backend)** | **5.9.3** (lock) | `apps/backend/package-lock.json` |
-| **TypeScript (admin)** | **5.7.3** (lock) | `apps/admin-portal/package-lock.json` |
-| **Flutter** | **3.35.7** | `apps/mobile/pubspec.yaml`, `apps/mobile/.fvmrc` |
-| **Dart** | **≥3.9.2 <4.0.0** | `apps/mobile/pubspec.yaml` |
+| **TypeScript (backend)** | **5.9.3** (lock) | `myboss-backend/package-lock.json` |
+| **TypeScript (admin)** | **5.7.3** (lock) | `myboss-admin/package-lock.json` |
+| **Flutter** | **3.35.7** | `myboss-mobile/pubspec.yaml`, `myboss-mobile/.fvmrc` |
+| **Dart** | **≥3.9.2 <4.0.0** | `myboss-mobile/pubspec.yaml` |
 
 ### Backend — NestJS 10 microservices
 
@@ -38,7 +38,7 @@
 | squad-service | 3004 | `/squad/api/v1` | `/api/v1/health` |
 | survey-service | 3005 | `/survey/api/v1` | `/api/v1/health` |
 
-Shared library: `apps/backend/libs/common` (Orange errors, JWT, Swagger, security headers).
+Shared library: `myboss-backend/libs/common` (Orange errors, JWT, Swagger, security headers).
 
 ### Admin portal
 
@@ -77,7 +77,7 @@ App version: **1.0.0+1**
 |------|-------|
 | Docker Compose | v2+ required |
 | cloudflared | Optional public tunnel (`start-demo-tunnel.sh`) |
-| FVM | Flutter version manager — `apps/mobile/.fvmrc` |
+| FVM | Flutter version manager — `myboss-mobile/.fvmrc` |
 
 ---
 
@@ -269,12 +269,12 @@ sudo ufw enable
 
 ```bash
 # Stop
-./infrastructure/scripts/stop-demo-server.sh
+./scripts/stop-demo-server.sh
 
 # Update after git pull
 git pull
-./infrastructure/scripts/start-demo-server.sh
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
+./scripts/start-demo-server.sh
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
 ---
@@ -282,7 +282,7 @@ ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
 ## 9. Docker file locations
 
 ```
-infrastructure/docker/
+docker/
 ├── Dockerfile.auth
 ├── Dockerfile.user
 ├── Dockerfile.config
@@ -302,10 +302,10 @@ infrastructure/docker/
 
 | Workflow | Path | Trigger |
 |----------|------|---------|
-| Backend CI | `.github/workflows/backend-ci.yml` | `apps/backend/**` |
-| Admin CI | `.github/workflows/admin-portal-ci.yml` | `apps/admin-portal/**` |
-| Mobile CI | `.github/workflows/mobile-ci.yml` | `apps/mobile/**` |
-| iOS demo build | `.github/workflows/ios-demo-build.yml` | Manual |
+| Backend CI | `myboss-backend/.gitlab-ci.yml` | Backend repo |
+| Admin CI | `myboss-admin/.gitlab-ci.yml` | Admin repo |
+| Mobile CI | `myboss-mobile/.gitlab-ci.yml` | Mobile repo |
+| Platform | `myboss-platform/.gitlab-ci.yml` | Docs / deploy scripts |
 
 Deploy jobs are placeholders until wired to your registry/K8s. Details: [`../cicd/CI_CD.md`](../cicd/CI_CD.md).
 

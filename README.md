@@ -151,6 +151,37 @@ Output saved to `demo-public-url.txt` (gitignored). Share:
 
 Keep tunnel alive — quick tunnels stop when `cloudflared` exits. Logs: `demo-tunnel.log`.
 
+**Error 1033?** Tunnel process died — restart `./scripts/start-demo-tunnel.sh` and use the **new** URL. Full guide: [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md)
+
+---
+
+## Demo vs production (Apigee vs nginx)
+
+| | Demo (today) | Production (target) |
+|---|--------------|---------------------|
+| **API gateway** | nginx `:8090` on laptop/VM | **Orange Apigee** |
+| **API paths** | `/auth/api/v1`, `/user/api/v1`, … | **Same paths** |
+| **Microservices** | Docker `:3001–3005` | Internal only behind Apigee |
+
+nginx mimics Apigee path routing so mobile/admin can be tested before Apigee is connected. **Production does not use nginx as the API gateway.**
+
+Read: [`docs/architecture/APIGEE_VS_NGINX.md`](docs/architecture/APIGEE_VS_NGINX.md)
+
+---
+
+## External Android APK
+
+For testers on **mobile data** (outside your laptop Wi‑Fi):
+
+```bash
+# 1. Tunnel running (see above)
+# 2. From myboss-mobile:
+./build-external-android.sh
+# → build/android-dist/myboss-demo-external.apk (share by email)
+```
+
+Details: [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md)
+
 ---
 
 ## Scripts reference
@@ -187,6 +218,8 @@ All deploy scripts require `ALLOW_DEPLOY=1` only for `deploy-mobile-web.sh`.
 | Doc | Path |
 |-----|------|
 | Index | [`docs/README.md`](docs/README.md) |
+| **Apigee vs nginx** | [`docs/architecture/APIGEE_VS_NGINX.md`](docs/architecture/APIGEE_VS_NGINX.md) |
+| **Tunnel + Error 1033 + APK** | [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md) |
 | DevOps / deploy | [`docs/devops/DEVOPS.md`](docs/devops/DEVOPS.md) |
 | Local setup (all apps) | [`docs/deployment/ENVIRONMENT_SETUP.md`](docs/deployment/ENVIRONMENT_SETUP.md) |
 | Database & demo seed | [`docs/database/DATABASE.md`](docs/database/DATABASE.md) |

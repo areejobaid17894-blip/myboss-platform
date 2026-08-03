@@ -1,7 +1,7 @@
 # Mobile App — Android Studio Guide
 
 **Audience:** Mobile developers, QA  
-**App:** Flutter employee app (`apps/mobile`)  
+**App:** Flutter employee app (`myboss-mobile`)  
 **Stack:** Flutter **3.35.7**, Dart **3.9.2+**, BLoC, Clean Architecture
 
 Full feature coverage: [`../EMPLOYEE_JOURNEY_COVERAGE.md`](../EMPLOYEE_JOURNEY_COVERAGE.md)
@@ -13,7 +13,7 @@ Full feature coverage: [`../EMPLOYEE_JOURNEY_COVERAGE.md`](../EMPLOYEE_JOURNEY_C
 | Tool | Version | Install |
 |------|---------|---------|
 | **Android Studio** | Latest stable | [developer.android.com/studio](https://developer.android.com/studio) |
-| **Flutter** | **3.35.7** | [FVM](https://fvm.app) — see `apps/mobile/.fvmrc` |
+| **Flutter** | **3.35.7** | [FVM](https://fvm.app) — see `myboss-mobile/.fvmrc` |
 | **Dart** | **≥3.9.2** | Bundled with Flutter |
 | **Backend** | Running | See [`../devops/DEVOPS.md`](../devops/DEVOPS.md) |
 
@@ -30,14 +30,14 @@ fvm flutter --version   # should show 3.35.7
 
 1. Launch **Android Studio**
 2. **File → Open**
-3. Select folder: `my_boss_v5/apps/mobile`
+3. Select folder: `myboss-mobile`
 4. Wait for Gradle sync to finish
 5. If prompted: **Trust Project**
 
 Project structure:
 
 ```
-apps/mobile/lib/
+myboss-mobile/lib/
 ├── app/           # App widget, theme, main shell
 ├── core/          # DI, network, session, router
 └── features/      # auth, squad, survey, gallery, chat, profile, …
@@ -59,10 +59,10 @@ apps/mobile/lib/
 ### Option A — Docker demo (recommended for QA)
 
 ```bash
-cd my_boss_v5
+cd myboss-platform
 cp .env.example .env
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/deploy-demo-server.sh 127.0.0.1
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 Gateway health: `curl http://127.0.0.1:8090/health`
@@ -70,7 +70,7 @@ Gateway health: `curl http://127.0.0.1:8090/health`
 ### Option B — Local dev (no Docker)
 
 ```bash
-cd my_boss_v5/apps/backend
+cd myboss-backend
 npm install
 npm run start:dev
 ```
@@ -84,7 +84,7 @@ Services on ports **3001–3005**.
 ### Terminal
 
 ```bash
-cd my_boss_v5/apps/mobile
+cd myboss-mobile
 fvm flutter pub get
 fvm flutter gen-l10n
 fvm flutter run --dart-define=DEMO_MODE=true
@@ -131,7 +131,7 @@ Configuration files: `lib/core/config/` (`env_config.dart`, `demo_api_endpoints.
 ### Demo APK (recommended for QA / field test)
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
 ./build-local-android.sh
 # Output: build/android-dist/myboss-demo-<lan-ip>.apk
 ```
@@ -171,7 +171,7 @@ Allow firewall access to ports **3001–3005** (dev) or **8090** (demo).
 Deploy mobile web to gateway:
 
 ```bash
-ALLOW_DEPLOY=1 ../../infrastructure/scripts/deploy-mobile-web.sh
+ALLOW_DEPLOY=1 ../../scripts/deploy-mobile-web.sh
 ```
 
 ---
@@ -237,7 +237,7 @@ fvm flutter analyze
 | [`../devops/DEVOPS.md`](../devops/DEVOPS.md) | Deploy backend & gateway |
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | REST endpoints |
 | [`../deployment/pdf/04_TESTING_GUIDE.md`](../deployment/pdf/04_TESTING_GUIDE.md) | QA checklist |
-| [`../../apps/mobile/README.md`](../../apps/mobile/README.md) | Quick reference |
+| [`../../myboss-mobile/README.md`](../../myboss-mobile/README.md) | Quick reference |
 
 ---
 

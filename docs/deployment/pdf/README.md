@@ -39,10 +39,10 @@ chmod +x generate-pdfs.sh
 ## Deploy & verify (from repo root)
 
 ```bash
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
 ```
 
 ---

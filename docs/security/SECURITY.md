@@ -125,18 +125,18 @@ Config: `INTERNAL_SERVICE_TOKEN` in `.env` (see `.env.example`).
 
 ```
 .env.example
-apps/backend/libs/common/src/modules/security.module.ts
-apps/backend/libs/common/src/guards/jwt-auth.guard.ts
-apps/backend/libs/common/src/guards/roles.guard.ts
-apps/backend/libs/common/src/guards/internal-service.guard.ts
-apps/backend/libs/common/src/middleware/security-headers.middleware.ts
-apps/backend/libs/common/src/filters/http-exception.filter.ts
-apps/backend/libs/common/src/utils/cors.util.ts
-apps/backend/libs/common/src/utils/env.util.ts
-apps/mobile/lib/core/storage/secure_storage_service_mobile.dart
-infrastructure/docker/nginx-api-gateway.conf
-infrastructure/docker/nginx-admin.conf
-apps/admin-portal/src/pages/LoginPage.tsx
+myboss-backend/libs/common/src/modules/security.module.ts
+myboss-backend/libs/common/src/guards/jwt-auth.guard.ts
+myboss-backend/libs/common/src/guards/roles.guard.ts
+myboss-backend/libs/common/src/guards/internal-service.guard.ts
+myboss-backend/libs/common/src/middleware/security-headers.middleware.ts
+myboss-backend/libs/common/src/filters/http-exception.filter.ts
+myboss-backend/libs/common/src/utils/cors.util.ts
+myboss-backend/libs/common/src/utils/env.util.ts
+myboss-mobile/lib/core/storage/secure_storage_service_mobile.dart
+docker/nginx-api-gateway.conf
+docker/nginx-admin.conf
+myboss-admin/src/pages/LoginPage.tsx
 ```
 
 ---
@@ -165,8 +165,8 @@ Server-side stack traces logged only for 5xx. Clients never receive raw exceptio
 curl -s http://127.0.0.1:8090/squad/api/v1/squads/stats | jq .
 
 # Full governance smoke test
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
 
 # Security headers (example)
 curl -sI http://127.0.0.1:8090/health | grep -i x-frame

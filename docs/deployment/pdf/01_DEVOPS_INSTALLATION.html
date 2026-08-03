@@ -37,7 +37,7 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <p><strong>Deploy method:</strong> <strong>Docker Compose</strong></p>
 <hr/>
 <h2>1. Overview</h2>
-<p>Backend runs as <strong>5 Docker containers</strong> built from <code>infrastructure/docker/Dockerfile.*</code>.</p>
+<p>Backend runs as <strong>5 Docker containers</strong> built from <code>docker/Dockerfile.*</code>.</p>
 <table>
 <tr><th>Dockerfile</th><th>Service</th><th>Port</th><th>Apigee prefix</th></tr>
 <tr><td><code>Dockerfile.auth</code></td><td>auth-service</td><td>3001</td><td><code>/auth/api/v1</code></td></tr>
@@ -47,7 +47,7 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <tr><td><code>Dockerfile.survey</code></td><td>survey-service</td><td>3005</td><td><code>/survey/api/v1</code></td></tr>
 </table>
 <p>Optional: <code>Dockerfile.admin-portal</code> → port <strong>8081</strong> (direct) or gateway <strong>8090/login</strong></p>
-<p>Compose file: <strong><code>infrastructure/docker/docker-compose.demo.yml</code></strong></p>
+<p>Compose file: <strong><code>docker/docker-compose.demo.yml</code></strong></p>
 <hr/>
 <h2>2. Server requirements</h2>
 <table>
@@ -67,13 +67,13 @@ sudo usermod -aG docker $USER
 docker --version
 docker compose version</code></pre>
 <p>Or use the repo script:</p>
-<pre><code>git clone &lt;repository-url&gt; /opt/myboss/my_boss_v5
-cd /opt/myboss/my_boss_v5
-chmod +x infrastructure/scripts/*.sh
-./infrastructure/scripts/install-demo-server.sh</code></pre>
+<pre><code>git clone &lt;repository-url&gt; /opt/myboss/myboss-platform
+cd /opt/myboss/myboss-platform
+chmod +x scripts/*.sh
+./scripts/install-demo-server.sh</code></pre>
 <hr/>
 <h2>4. Environment file</h2>
-<pre><code>cd /opt/myboss/my_boss_v5
+<pre><code>cd /opt/myboss/myboss-platform
 cp .env.example .env
 nano .env</code></pre>
 <p>Required:</p>
@@ -86,19 +86,19 @@ TAWK_PROPERTY_ID=your_tawk_property_id
 TAWK_WIDGET_ID=default</code></pre>
 <hr/>
 <h2>5. Build and start (Docker Compose)</h2>
-<pre><code>cd /opt/myboss/my_boss_v5
-./infrastructure/scripts/start-demo-server.sh</code></pre>
+<pre><code>cd /opt/myboss/myboss-platform
+./scripts/start-demo-server.sh</code></pre>
 <p>This runs:</p>
-<pre><code>docker compose -f infrastructure/docker/docker-compose.demo.yml up -d --build</code></pre>
+<pre><code>docker compose -f docker/docker-compose.demo.yml up -d --build</code></pre>
 <p><strong>With admin portal:</strong></p>
-<pre><code>docker compose -f infrastructure/docker/docker-compose.demo.yml \
+<pre><code>docker compose -f docker/docker-compose.demo.yml \
   --profile with-admin up -d --build</code></pre>
 <p>Admin UI: http://demo-server:8090/login (gateway) or http://demo-server:8081 (direct)</p>
 <hr/>
 <h2>6. Verify</h2>
-<pre><code>./infrastructure/scripts/verify-backend.sh
-docker compose -f infrastructure/docker/docker-compose.demo.yml ps
-docker compose -f infrastructure/docker/docker-compose.demo.yml logs -f auth-service</code></pre>
+<pre><code>./scripts/verify-backend.sh
+docker compose -f docker/docker-compose.demo.yml ps
+docker compose -f docker/docker-compose.demo.yml logs -f auth-service</code></pre>
 <hr/>
 <h2>7. Firewall</h2>
 <pre><code>sudo ufw allow OpenSSH
@@ -107,14 +107,14 @@ sudo ufw enable</code></pre>
 <hr/>
 <h2>8. Stop / update</h2>
 <pre><code># Stop
-./infrastructure/scripts/stop-demo-server.sh
+./scripts/stop-demo-server.sh
 
 # Update after git pull
 git pull
-./infrastructure/scripts/start-demo-server.sh</code></pre>
+./scripts/start-demo-server.sh</code></pre>
 <hr/>
 <h2>9. Docker files location</h2>
-<pre><code>infrastructure/docker/
+<pre><code>docker/
 ├── Dockerfile.auth
 ├── Dockerfile.user
 ├── Dockerfile.config
@@ -127,7 +127,7 @@ git pull
 <hr/>
 <h2>10. Checklist</h2>
 <p>☐ Docker + Compose installed</p>
-<p>☐ Repo at <code>/opt/myboss/my_boss_v5</code></p>
+<p>☐ Repo at <code>/opt/myboss/myboss-platform</code></p>
 <p>☐ <code>.env</code> with JWT_SECRET</p>
 <p>☐ <code>docker compose ... up -d --build</code> successful</p>
 <p>☐ <code>verify-backend.sh</code> passes</p>

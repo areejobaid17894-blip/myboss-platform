@@ -15,7 +15,7 @@ myboss-repos/
 |------|--------|
 | myboss-mobile | https://github.com/areejobaid17894-blip/myboss-mobile |
 | myboss-admin | https://github.com/areejobaid17894-blip/myboss-admin |
-| myboss-backend | https://github.com/areejobaid17894-blip/myboss-backend *(create & push if missing)* |
+| myboss-backend | https://github.com/areejobaid17894-blip/myboss-backend |
 | myboss-platform | https://github.com/areejobaid17894-blip/myboss-platform |
 
 ---
@@ -240,20 +240,26 @@ Share with testers:
 - Mobile: `https://<tunnel>/app/`
 - Admin: `https://<tunnel>/login`
 
-### Release APK (physical phones)
+**Error 1033?** Tunnel stopped — restart script and use the new URL. See [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md).
 
-On a machine with Flutter + Android SDK:
+### External Android APK (mobile data)
 
 ```bash
 cd myboss-mobile
-# Same Wi‑Fi as server:
-API_HOST=<SERVER_LAN_IP> ./build-local-android.sh
-# Output: build/android-dist/myboss-demo-<ip>.apk
+./build-external-android.sh
+# → build/android-dist/myboss-demo-external.apk (email to testers)
 ```
 
-If tunnel is running, the APK also picks up the URL from `myboss-platform/demo-public-url.txt`.
+### Demo vs production gateway
 
-Full production guide: [myboss-platform/docs/devops/DEVOPS.md](myboss-platform/docs/devops/DEVOPS.md)
+| Demo | Production |
+|------|------------|
+| nginx `:8090` | **Orange Apigee** |
+| Same API paths | Same API paths |
+
+Read: [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md)
+
+Full production guide: [`devops/DEVOPS.md`](devops/DEVOPS.md)
 
 ---
 

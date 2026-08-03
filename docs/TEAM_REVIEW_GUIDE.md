@@ -2,7 +2,7 @@
 
 **Purpose:** Single entry point for DevOps, Security, Apigee, Mobile, Backend, Admin, QA, and Architecture teams to review the platform before go-live.
 
-**Repository:** `my_boss_v5`  
+**Repositories:** multi-repo — see [MULTI_REPO_SETUP.md](MULTI_REPO_SETUP.md)  
 **Current phase:** Demo-ready (Orange governance-aligned APIs, JWT + 2FA demo, Swagger, native chat)
 
 ---
@@ -14,7 +14,7 @@
 | **DevOps / Infrastructure** | [`docs/devops/DEVOPS.md`](devops/DEVOPS.md) | `deploy-demo-server.sh`, `verify-backend.sh` |
 | **Security / Compliance** | [`docs/security/SECURITY.md`](security/SECURITY.md) | JWT, Orange errors, internal token |
 | **Apigee / API Platform** | [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) | Swagger |
-| **Backend development** | [`apps/backend/README.md`](../apps/backend/README.md) | `verify-mobile-api.sh` |
+| **Backend development** | [`../../myboss-backend/README.md`](../../myboss-backend/README.md) | `verify-mobile-api.sh` |
 | **Mobile (Android / iOS)** | [`docs/mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | APK build |
 | **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | Gateway `/login` |
 | **QA / Testing** | [`docs/deployment/pdf/04_TESTING_GUIDE.md`](deployment/pdf/04_TESTING_GUIDE.md) | Testing guide |
@@ -32,10 +32,10 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | Component | Version | Notes |
 |-----------|---------|-------|
 | **Node.js** | 20 LTS (`node:20-alpine` in Docker) | Backend + admin build; GitHub Actions `node-version: '20'` |
-| **TypeScript (backend)** | ^5.4.0 → **5.9.3** locked | `apps/backend/package-lock.json` |
-| **TypeScript (admin)** | ~5.7.0 → **5.7.3** locked | `apps/admin-portal/package-lock.json` |
-| **Flutter** | **3.35.7** | `apps/mobile/pubspec.yaml`, `apps/mobile/.fvmrc` |
-| **Dart** | **^3.9.2** (>=3.9.2 <4.0.0) | `apps/mobile/pubspec.yaml` |
+| **TypeScript (backend)** | ^5.4.0 → **5.9.3** locked | `myboss-backend/package-lock.json` |
+| **TypeScript (admin)** | ~5.7.0 → **5.7.3** locked | `myboss-admin/package-lock.json` |
+| **Flutter** | **3.35.7** | `myboss-mobile/pubspec.yaml`, `myboss-mobile/.fvmrc` |
+| **Dart** | **^3.9.2** (>=3.9.2 <4.0.0) | `myboss-mobile/pubspec.yaml` |
 
 ### Backend (NestJS microservices)
 
@@ -53,7 +53,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | jest | ^29.7.0 | 29.7.0 |
 
 **Services:** auth (3001), user (3002), config (3003), squad (3004), survey (3005)  
-**Shared library:** `apps/backend/libs/common` (Orange errors, JWT, Swagger, CORS, security headers)
+**Shared library:** `myboss-backend/libs/common` (Orange errors, JWT, Swagger, CORS, security headers)
 
 ### Admin portal
 
@@ -94,7 +94,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 |------|-----------------|
 | cloudflared | 2026.7.2+ (quick tunnel for external demo) |
 | Docker Compose | v2+ |
-| FVM | Flutter version manager — `apps/mobile/.fvmrc` |
+| FVM | Flutter version manager — `myboss-mobile/.fvmrc` |
 
 ---
 
@@ -145,8 +145,8 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | myboss-admin | `Dockerfile.admin-portal` | nginx (profile `with-admin`) |
 | myboss-api-gateway | nginx:1.27-alpine | `/health` → `OK` |
 
-**Compose file:** `infrastructure/docker/docker-compose.demo.yml`  
-**Gateway:** deployed separately via `infrastructure/scripts/deploy-mobile-web.sh` (port **8090**)
+**Compose file:** `docker/docker-compose.demo.yml`  
+**Gateway:** deployed separately via `scripts/deploy-mobile-web.sh` (port **8090**)
 
 ### Apigee path mapping (production target)
 
@@ -166,14 +166,14 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| Orange error envelope `{ code, reason, message, infoURL? }` | **Implemented** | `apps/backend/libs/common/src/errors/orange-error-codes.ts`, `http-exception.filter.ts` |
+| Orange error envelope `{ code, reason, message, infoURL? }` | **Implemented** | `myboss-backend/libs/common/src/errors/orange-error-codes.ts`, `http-exception.filter.ts` |
 | Numeric Orange codes (40, 41, 42, 50, 60, 69, …) | **Implemented** | Mapped in `orange-error-codes.ts` |
 | JWT authentication on protected routes | **Implemented** | Global `JwtAuthGuard`; `@Public()` for open routes |
 | RBAC (ADMIN role) | **Implemented** | `RolesGuard` + `@Roles()` |
 | Swagger / OpenAPI per service | **Implemented** | `/api/v1/docs` when `APP_ENV=demo\|development` or `SWAGGER_ENABLED=true` |
 | Apigee-style URL paths | **Implemented** | Gateway nginx proxies `/auth/`, `/user/`, etc. |
 | 2FA endpoint naming `verify-2fa` | **Implemented** | `POST /auth/verify-2fa` (not `verify-otp`) |
-| Governance smoke test script | **Implemented** | `infrastructure/scripts/verify-mobile-api.sh` |
+| Governance smoke test script | **Implemented** | `scripts/verify-mobile-api.sh` |
 | Chat API under config service | **Implemented** | `docs/api/CHAT_API.md` |
 | Rate limiting | **Apigee responsibility** | Documented spike arrest 100 req/min/IP in Apigee guide |
 | Production 2FA provider | **Demo only** | `TWO_FA_DEMO_ENABLED=true`; static OTP in demo mode |
@@ -181,8 +181,8 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 **Run governance verification:**
 
 ```bash
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
 ```
 
 ---
@@ -225,13 +225,13 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 **Security-related files to review:**
 
 - `.env.example` — all configurable secrets
-- `apps/backend/libs/common/src/modules/security.module.ts`
-- `apps/backend/libs/common/src/guards/jwt-auth.guard.ts`
-- `apps/backend/libs/common/src/middleware/security-headers.middleware.ts`
-- `apps/backend/libs/common/src/utils/cors.util.ts`
-- `apps/backend/libs/common/src/utils/env.util.ts` — JWT secret validation
-- `apps/mobile/lib/core/storage/secure_storage_service_mobile.dart`
-- `infrastructure/docker/nginx-api-gateway.conf`
+- `myboss-backend/libs/common/src/modules/security.module.ts`
+- `myboss-backend/libs/common/src/guards/jwt-auth.guard.ts`
+- `myboss-backend/libs/common/src/middleware/security-headers.middleware.ts`
+- `myboss-backend/libs/common/src/utils/cors.util.ts`
+- `myboss-backend/libs/common/src/utils/env.util.ts` — JWT secret validation
+- `myboss-mobile/lib/core/storage/secure_storage_service_mobile.dart`
+- `docker/nginx-api-gateway.conf`
 
 ---
 
@@ -253,34 +253,34 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 | Deployment overview | `docs/deployment/DEPLOYMENT.md` |
 | Environment setup | `docs/deployment/ENVIRONMENT_SETUP.md` |
 | CI/CD | `docs/cicd/CI_CD.md` |
-| Docker README | `infrastructure/docker/README.md` |
+| Docker README | `docker/README.md` |
 
 ### Deploy commands
 
 ```bash
 cp .env.example .env          # set JWT_SECRET, DEMO_HOST
-./infrastructure/scripts/deploy-demo-server.sh <SERVER_IP>
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/start-demo-tunnel.sh    # optional public URL
-./infrastructure/scripts/verify-backend.sh
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/deploy-demo-server.sh <SERVER_IP>
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/start-demo-tunnel.sh    # optional public URL
+./scripts/verify-backend.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 ### CI/CD workflows (GitHub Actions)
 
 | Workflow | File | Trigger |
 |----------|------|---------|
-| Backend CI | `.github/workflows/backend-ci.yml` | push/PR → `apps/backend/**` |
-| Admin CI | `.github/workflows/admin-portal-ci.yml` | push/PR → `apps/admin-portal/**` |
-| Mobile CI | `.github/workflows/mobile-ci.yml` | push/PR → `apps/mobile/**` |
-| iOS demo build | `.github/workflows/ios-demo-build.yml` | manual |
+| Backend CI | `myboss-backend/.gitlab-ci.yml` | push → backend repo |
+| Admin CI | `myboss-admin/.gitlab-ci.yml` | push → admin repo |
+| Mobile CI | `myboss-mobile/.gitlab-ci.yml` | push → mobile repo |
+| Platform docs/deploy | `myboss-platform/.gitlab-ci.yml` | push → platform repo |
 
 **Note:** Deploy jobs in CI are placeholders (`echo` only). Wire to your registry/K8s before production.
 
 ### DevOps checklist
 
 - [ ] VM meets CPU/RAM/disk specs
-- [ ] Docker images build from `infrastructure/docker/Dockerfile.*`
+- [ ] Docker images build from `docker/Dockerfile.*`
 - [ ] Gateway **8090** serves `/app/`, `/login`, and API proxies
 - [ ] `verify-backend.sh` passes
 - [ ] `verify-mobile-api.sh --gateway` passes
@@ -318,7 +318,7 @@ See full checklist in [`docs/security/SECURITY.md`](security/SECURITY.md). Summa
 curl -s http://127.0.0.1:8090/squad/api/v1/squads/stats | jq .
 
 # Authenticated flow (governance script)
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 ### Documents
@@ -386,15 +386,15 @@ curl -s http://127.0.0.1:8090/squad/api/v1/squads/stats | jq .
 
 | Document | Path |
 |----------|------|
-| Backend README | `apps/backend/README.md` |
+| Backend README | `myboss-backend/README.md` |
 | API overview | `docs/api/API_OVERVIEW.md` |
 | Chat API | `docs/api/CHAT_API.md` |
-| Orange error codes | `apps/backend/libs/common/src/errors/orange-error-codes.ts` |
+| Orange error codes | `myboss-backend/libs/common/src/errors/orange-error-codes.ts` |
 
 ### Local commands
 
 ```bash
-cd apps/backend
+cd myboss-backend
 npm install
 npm run docker:up      # Postgres + Redis (future use)
 npm run start:dev      # all 5 services
@@ -423,14 +423,14 @@ npm run lint
 
 | Document | Path |
 |----------|------|
-| Mobile README | `apps/mobile/README.md` |
+| Mobile README | `myboss-mobile/README.md` |
 | Android guide (PDF) | `docs/deployment/pdf/05_ANDROID_STUDIO_MOBILE.md` |
 | iOS urgent build | `docs/deployment/IOS-URGENT-BUILD.md` |
 
 ### Build commands
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
 fvm flutter pub get && fvm flutter gen-l10n
 fvm flutter run --dart-define=DEMO_MODE=true
 ./build-local-android.sh          # release APK
@@ -459,10 +459,10 @@ fvm flutter run --dart-define=DEMO_MODE=true
 
 | Document | Path |
 |----------|------|
-| Admin README | `apps/admin-portal/README.md` |
+| Admin README | `myboss-admin/README.md` |
 | Admin journey matrix | `docs/ADMIN_JOURNEY_COVERAGE.md` |
 | Data model | `docs/architecture/DATA_MODEL.md` |
-| Env files | `apps/admin-portal/.env.demo`, `.env.docker` |
+| Env files | `myboss-admin/.env.demo`, `.env.docker` |
 
 ### Demo URLs
 
@@ -477,7 +477,7 @@ Current tunnel URL: **`demo-public-url.txt`** at repo root.
 ### Commands
 
 ```bash
-cd apps/admin-portal
+cd myboss-admin
 npm install
 npm run dev              # http://localhost:5173
 npm run build:demo       # production build for demo env
@@ -509,13 +509,13 @@ npm test
 ### Automated verification
 
 ```bash
-./infrastructure/scripts/verify-mobile-api.sh <HOST> --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-mobile-api.sh <HOST> --gateway
+./scripts/verify-localhost.sh
 ```
 
 ### Demo test accounts
 
-Run `./infrastructure/scripts/reset-demo-data.sh` before each test cycle to restore squads and clear terms acceptance.
+Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and clear terms acceptance.
 
 | Email | Purpose |
 |-------|---------|

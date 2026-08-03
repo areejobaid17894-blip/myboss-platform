@@ -19,9 +19,9 @@ Apple **requires an Apple ID** to install on a physical iPhone. There is no bypa
 
 1. Push this repo to GitHub (if not already).
 2. Open https://codemagic.io → **Sign up with GitHub**.
-3. **Add application** → select `my_boss_v5` repo.
+3. **Add application** → select the **`myboss-mobile`** repository.
 4. Choose **Flutter** workflow.
-5. Project path: `apps/mobile`
+5. Project path: `myboss-mobile`
 6. Build arguments (update LAN IP from `demo_server_host.dart`; add tunnel host from `demo-public-url.txt` when available):
 
    ```
@@ -57,7 +57,7 @@ Apple **requires an Apple ID** to install on a physical iPhone. There is no bypa
    sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
    sudo xcodebuild -runFirstLaunch
    brew install cocoapods
-   cd ~/Desktop/my_boss_v5/apps/mobile
+   cd ~/Desktop/myboss-mobile
    ./build-demo-ios.sh --ipa
    ```
 
@@ -68,7 +68,7 @@ Apple **requires an Apple ID** to install on a physical iPhone. There is no bypa
 Use **Android APK** (no Apple account):
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
 ./build-local-android.sh
 # Output: build/android-dist/myboss-demo-<lan-ip>.apk
 ```

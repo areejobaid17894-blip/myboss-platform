@@ -5,7 +5,7 @@ Reference designs:
 - **Admin HTML mockup:** `the BOSS Admin web page Demo V2 July 2026.html` (11 nav sections, black sidebar)
 - **Platform journey PDF:** `v1 Platform employee journey Rev 1.0 July 2026.pptx.pdf` (admin acceptance criteria on screens #14–16)
 
-Admin portal: `apps/admin-portal/` — **the Boss — Admin Console** at `/login` on gateway `:8090`.
+Admin portal: `myboss-admin/` — **the Boss — Admin Console** at `/login` on gateway `:8090`.
 
 ## Navigation coverage (HTML V2)
 

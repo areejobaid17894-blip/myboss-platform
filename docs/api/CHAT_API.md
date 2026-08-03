@@ -238,10 +238,10 @@ JWT_SECRET=...                 # same secret as auth-service
 
 ```bash
 # Full mobile + chat smoke (gateway)
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 
 # Localhost including send + support reply
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-localhost.sh
 ```
 
 ## Manual curl test

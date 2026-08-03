@@ -37,14 +37,14 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <h2>1. Full demo deploy (recommended)</h2>
 <p>From repo root:</p>
 <pre><code>cp .env.example .env
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/start-demo-tunnel.sh          # optional: public URL
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh</code></pre>
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/start-demo-tunnel.sh          # optional: public URL
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh</code></pre>
 <hr/>
 <h2>2. Docker compose reference</h2>
-<pre><code>COMPOSE=&quot;docker compose -f infrastructure/docker/docker-compose.demo.yml&quot;
+<pre><code>COMPOSE=&quot;docker compose -f docker/docker-compose.demo.yml&quot;
 
 $COMPOSE up -d --build
 $COMPOSE --profile with-admin up -d --build admin-portal
@@ -91,7 +91,7 @@ $COMPOSE down</code></pre>
 </table>
 <hr/>
 <h2>7. Android demo APK</h2>
-<pre><code>cd apps/mobile
+<pre><code>cd myboss-mobile
 ./build-local-android.sh</code></pre>
 <p>Output: <code>build/android-dist/myboss-demo-&lt;lan-ip&gt;.apk</code></p>
 <p>Install on phone (same Wi‑Fi as Mac, or use Cloudflare tunnel URL baked into the APK).</p>
@@ -102,7 +102,7 @@ $COMPOSE down</code></pre>
 <tr><td>Build fails</td><td><code>docker compose ... build --no-cache</code></td></tr>
 <tr><td>Port in use</td><td><code>docker compose ... down</code>; <code>lsof -i :8090</code></td></tr>
 <tr><td>401 on squad/chat</td><td>Pass <code>Authorization: Bearer {token}</code></td></tr>
-<tr><td>Mobile web stale</td><td><code>ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh</code></td></tr>
+<tr><td>Mobile web stale</td><td><code>ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh</code></td></tr>
 </table>
 <hr/>
 <p>*Orange — my boss app — Docker*</p>

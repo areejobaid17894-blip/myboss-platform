@@ -158,7 +158,7 @@ See `docs/deployment/pdf/03_APIGEE_CONNECTION.md` for proxy setup:
 ## Verification
 
 ```bash
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
 ---

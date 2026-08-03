@@ -37,13 +37,13 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <hr/>
 <h2>1. Automated verification (recommended)</h2>
 <pre><code># Gateway + JWT + Swagger + chat
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 
 # Full localhost (squad, chat send/reply, surveys)
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-localhost.sh
 
 # Backend health only
-./infrastructure/scripts/verify-backend.sh</code></pre>
+./scripts/verify-backend.sh</code></pre>
 <hr/>
 <h2>2. Swagger UI (interactive API docs)</h2>
 <table>
@@ -124,7 +124,7 @@ curl https://api-demo.orange.com/config/api/v1/chat/config</code></pre>
 </table>
 <hr/>
 <h2>9. Backend unit tests</h2>
-<pre><code>cd apps/backend
+<pre><code>cd myboss-backend
 npm run test:auth
 npm run test:user
 npm run test:config

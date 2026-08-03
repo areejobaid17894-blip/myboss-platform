@@ -122,7 +122,7 @@ VITE_SURVEY_API_URL=https://api-demo.orange.com/survey/api/v1
 
 ```bash
 fvm flutter build web --dart-define=DEMO_MODE=true --base-href=/app/
-# or use: apps/mobile/build-demo-web.sh
+# or use: myboss-mobile/build-demo-web.sh
 ```
 
 ---

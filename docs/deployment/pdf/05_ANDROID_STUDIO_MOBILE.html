@@ -39,7 +39,7 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <table>
 <tr><th>Tool</th><th>Version</th></tr>
 <tr><td>Android Studio</td><td>Latest stable</td></tr>
-<tr><td>Flutter SDK</td><td><strong>3.35.7</strong> / Dart <strong>3.9.2</strong> (FVM — see <code>apps/mobile/.fvmrc</code>)</td></tr>
+<tr><td>Flutter SDK</td><td><strong>3.35.7</strong> / Dart <strong>3.9.2</strong> (FVM — see <code>myboss-mobile/.fvmrc</code>)</td></tr>
 <tr><td>Backend</td><td>Running (see <code>02_RUN_DEMO_SERVER.md</code>)</td></tr>
 </table>
 <p>Verify Flutter:</p>
@@ -48,7 +48,7 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <h2>2. Open project in Android Studio</h2>
 <ol><li>Launch <strong>Android Studio</strong></li></ol>
 <ol><li><strong>File → Open</strong></li></ol>
-<ol><li>Select folder: <code>my_boss_v5/apps/mobile</code></li></ol>
+<ol><li>Select folder: <code>myboss-mobile</code></li></ol>
 <ol><li>Wait for Gradle sync to finish</li></ol>
 <ol><li>If prompted: <strong>Trust Project</strong></li></ol>
 <hr/>
@@ -60,16 +60,16 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
 <hr/>
 <h2>4. Start backend (required before mobile)</h2>
 <p><strong>Option A — Docker (demo / infra):</strong></p>
-<pre><code>cd my_boss_v5
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway</code></pre>
+<pre><code>cd myboss-platform
+./scripts/deploy-demo-server.sh 127.0.0.1
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway</code></pre>
 <p><strong>Option B — Local dev (no Docker):</strong></p>
-<pre><code>cd my_boss_v5/apps/backend
+<pre><code>cd myboss-backend
 npm run start:dev</code></pre>
 <hr/>
 <h2>5. Run mobile app</h2>
 <p><strong>Terminal</strong> (or Android Studio <strong>Run ▶</strong> button):</p>
-<pre><code>cd my_boss_v5/apps/mobile
+<pre><code>cd myboss-mobile
 fvm flutter pub get
 fvm flutter gen-l10n
 fvm flutter run --dart-define=DEMO_MODE=true</code></pre>
@@ -88,7 +88,7 @@ fvm flutter run --dart-define=DEMO_MODE=true</code></pre>
 <hr/>
 <h2>7. Physical Android device</h2>
 <h3>Demo APK (recommended for QA / external devices)</h3>
-<pre><code>cd apps/mobile
+<pre><code>cd myboss-mobile
 ./build-local-android.sh
 # Output: build/android-dist/myboss-demo-&lt;lan-ip&gt;.apk</code></pre>
 <p>Copy APK to phone, uninstall old app first, then install.</p>
@@ -111,7 +111,7 @@ fvm flutter run --dart-define=DEMO_MODE=true</code></pre>
 <p>Other test emails: <code>nisreen.a@orange.com</code>, <code>omar.t@orange.com</code></p>
 <hr/>
 <h2>9. Release demo APK</h2>
-<pre><code>cd apps/mobile
+<pre><code>cd myboss-mobile
 ./build-local-android.sh
 # or
 ./build-demo-apk.sh</code></pre>

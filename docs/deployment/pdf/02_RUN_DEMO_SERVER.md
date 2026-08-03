@@ -10,11 +10,11 @@ From repo root:
 
 ```bash
 cp .env.example .env
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/start-demo-tunnel.sh          # optional: public URL
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/start-demo-tunnel.sh          # optional: public URL
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
 ```
 
 ---
@@ -22,7 +22,7 @@ ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
 ## 2. Docker compose reference
 
 ```bash
-COMPOSE="docker compose -f infrastructure/docker/docker-compose.demo.yml"
+COMPOSE="docker compose -f docker/docker-compose.demo.yml"
 
 $COMPOSE up -d --build
 $COMPOSE --profile with-admin up -d --build admin-portal
@@ -86,7 +86,7 @@ Auth verify endpoint: `POST /auth/verify-2fa` (not verify-otp).
 ## 7. Android demo APK
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
 ./build-local-android.sh
 ```
 
@@ -103,7 +103,7 @@ Install on phone (same Wi‑Fi as Mac, or use Cloudflare tunnel URL baked into t
 | Build fails | `docker compose ... build --no-cache` |
 | Port in use | `docker compose ... down`; `lsof -i :8090` |
 | 401 on squad/chat | Pass `Authorization: Bearer {token}` |
-| Mobile web stale | `ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh` |
+| Mobile web stale | `ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh` |
 
 ---
 

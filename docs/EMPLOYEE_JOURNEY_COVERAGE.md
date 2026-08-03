@@ -87,18 +87,18 @@ Legend: ✅ Done · 🟡 Partial · ❌ Not yet · 🔒 Gated (no-squad)
 
 ```bash
 # Full localhost smoke (auth, squad, omar gating, chat, survey)
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-localhost.sh
 
 # Quick (skip chat/survey)
-./infrastructure/scripts/verify-localhost.sh --quick
+./scripts/verify-localhost.sh --quick
 ```
 
 ## Local UI vs deployed web
 
 | Build | URL | UI version |
 |-------|-----|------------|
-| Local dev | `./apps/mobile/run-local-web.sh` → `:8092` | Latest Flutter source |
-| Deployed demo | `ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh` | Same as `:8092` after deploy |
+| Local dev | `./myboss-mobile/run-local-web.sh` → `:8092` | Latest Flutter source |
+| Deployed demo | `ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh` | Same as `:8092` after deploy |
 | Android emulator | `fvm flutter run -d emulator-5554 …` | Latest |
 
 Reference files: `/Users/macbookair/Downloads/the_boss_app.html`, `/Users/macbookair/Downloads/v1 Platform employee journey Rev 1.0 July 2026.pptx.pdf`

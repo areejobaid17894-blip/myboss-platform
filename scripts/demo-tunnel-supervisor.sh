@@ -2,13 +2,13 @@
 # Internal supervisor — keeps cloudflared running and updates demo-public-url.txt
 set -uo pipefail
 
-REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-cd "$REPO_DIR"
+PLATFORM_DIR="${PLATFORM_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+cd "$PLATFORM_DIR"
 
 GATEWAY_URL="http://127.0.0.1:8090"
-URL_FILE="${REPO_DIR}/demo-public-url.txt"
-LOG_FILE="${REPO_DIR}/demo-tunnel.log"
-PID_FILE="${REPO_DIR}/demo-tunnel.pid"
+URL_FILE="${PLATFORM_DIR}/demo-public-url.txt"
+LOG_FILE="${PLATFORM_DIR}/demo-tunnel.log"
+PID_FILE="${PLATFORM_DIR}/demo-tunnel.pid"
 
 write_url_from_log() {
   local marker="$1"

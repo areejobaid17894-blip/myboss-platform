@@ -27,7 +27,7 @@ For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURI
 | **squad-service** | `myboss_squad` | `squads`, `squad_members`, `squad_join_requests` |
 | **survey-service** | `myboss_survey` | `survey_responses`, `gallery_items`, `notifications`, surveys catalog |
 
-Demo today: all data in process memory; PostgreSQL compose exists at `infrastructure/docker/docker-compose.yml` for local dev only.
+Demo today: all data in process memory; PostgreSQL compose exists at `docker/docker-compose.yml` for local dev only.
 
 ---
 
@@ -235,7 +235,7 @@ Production target: DB transaction or outbox event instead of synchronous HTTP.
 
 ## 7. Demo seed accounts
 
-Shared demo identifiers live in `apps/backend/libs/common/src/demo/demo-seed.constants.ts` (`DEMO_USER_IDS`, `DEMO_SQUAD_IDS`, `DEMO_BUILDING`, `DEMO_EMAILS`). Auth, user, and squad repositories import these so ids stay aligned.
+Shared demo identifiers live in `myboss-backend/libs/common/src/demo/demo-seed.constants.ts` (`DEMO_USER_IDS`, `DEMO_SQUAD_IDS`, `DEMO_BUILDING`, `DEMO_EMAILS`). Auth, user, and squad repositories import these so ids stay aligned.
 
 | Email | User id | Onboarding | Squad | Purpose |
 |-------|---------|------------|-------|---------|
@@ -252,7 +252,7 @@ Shared demo identifiers live in `apps/backend/libs/common/src/demo/demo-seed.con
 In-memory state mutates during testing. Restore seed data with:
 
 ```bash
-./infrastructure/scripts/reset-demo-data.sh
+./scripts/reset-demo-data.sh
 ```
 
 This rebuilds **user-service** (clears `termsAcceptedAt` in seed) and restarts **auth**, **squad**, and **survey** services. Each service restores its in-memory arrays on boot via `resetDemoSeed()` where implemented.
@@ -270,7 +270,7 @@ This rebuilds **user-service** (clears `termsAcceptedAt` in seed) and restarts *
 ## 8. Local PostgreSQL (optional)
 
 ```bash
-cd infrastructure/docker
+cd docker
 docker compose up -d    # postgres:16-alpine, redis:7-alpine
 ```
 
