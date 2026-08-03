@@ -3,8 +3,8 @@
 # Usage: ./infrastructure/scripts/start-demo-tunnel.sh
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-cd "$REPO_DIR"
+PLATFORM_DIR="${PLATFORM_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+cd "$PLATFORM_DIR"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -16,13 +16,13 @@ fi
 GATEWAY_URL="http://127.0.0.1:8090"
 if ! curl -sf "${GATEWAY_URL}/health" >/dev/null 2>&1; then
   echo "API gateway not reachable at ${GATEWAY_URL}"
-  echo "Deploy first: ./infrastructure/scripts/deploy-demo-server.sh"
+  echo "Deploy first: ./scripts/deploy-demo-server.sh"
   exit 1
 fi
 
-URL_FILE="${REPO_DIR}/demo-public-url.txt"
-LOG_FILE="${REPO_DIR}/demo-tunnel.log"
-SUPERVISOR_PID_FILE="${REPO_DIR}/demo-tunnel-supervisor.pid"
+URL_FILE="${PLATFORM_DIR}/demo-public-url.txt"
+LOG_FILE="${PLATFORM_DIR}/demo-tunnel.log"
+SUPERVISOR_PID_FILE="${PLATFORM_DIR}/demo-tunnel-supervisor.pid"
 
 stop_tunnel() {
   if [ -f "$SUPERVISOR_PID_FILE" ]; then

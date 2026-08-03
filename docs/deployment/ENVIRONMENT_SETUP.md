@@ -1,6 +1,22 @@
 # my boss app — Environment Setup Guide
 
-Local development setup for all applications. For production/demo deployment, use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
+Local development setup for all applications in the **multi-repo** layout. For production/demo deployment, use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
+
+---
+
+## Repository layout
+
+Clone all four repos as **siblings**:
+
+```
+myboss-repos/
+├── myboss-mobile/
+├── myboss-admin/
+├── myboss-backend/
+└── myboss-platform/    ← docs + deploy scripts live here
+```
+
+See [`../../../README.md`](../../../README.md) in the parent folder for the full step-by-step guide.
 
 ---
 
@@ -16,50 +32,78 @@ Local development setup for all applications. For production/demo deployment, us
 
 ---
 
-## 1. Repository
+## 1. Environment files
+
+**Platform** (Docker deploy):
 
 ```bash
-git clone <repository-url> my_boss_v5
-cd my_boss_v5
+cd myboss-platform
+cp .env.example .env
+# JWT_SECRET, INTERNAL_SERVICE_TOKEN
+```
+
+**Backend** (local npm dev):
+
+```bash
+cd myboss-backend
 cp .env.example .env
 ```
 
-Edit `.env` — see [`.env.example`](../../.env.example). Required: `JWT_SECRET`, optionally `INTERNAL_SERVICE_TOKEN`.
-
----
-
-## 2. Backend (local dev)
+**Admin** (Vite dev):
 
 ```bash
-cd apps/backend
-npm install
-npm run start:dev    # all services :3001–3005
+cd myboss-admin
+cp .env.example .env.development
 ```
 
-Verify:
-- http://localhost:3001/api/v1/docs (Swagger)
-- http://localhost:3001/api/v1/health
+---
 
-Details: [`apps/backend/README.md`](../../apps/backend/README.md)
+## 2. Full demo stack (fastest)
+
+```bash
+cd myboss-platform
+chmod +x scripts/*.sh
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+```
+
+- Mobile: http://127.0.0.1:8090/app/
+- Admin: http://127.0.0.1:8090/login
 
 ---
 
-## 3. Admin portal
+## 3. Backend (local dev, no Docker)
 
 ```bash
-cd apps/admin-portal
+cd myboss-backend
+npm install
+npm run build -w @myboss/common
+npm run start:dev
+```
+
+Verify: http://localhost:3001/api/v1/docs
+
+Details: [`../../../myboss-backend/README.md`](../../../myboss-backend/README.md) *(sibling repo)*
+
+---
+
+## 4. Admin portal (Vite)
+
+```bash
+cd myboss-admin
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 (or gateway http://127.0.0.1:8090/login when demo stack running).
+Open http://localhost:5173
 
 ---
 
-## 4. Mobile app
+## 5. Mobile app (Flutter)
 
 ```bash
-cd apps/mobile
+cd myboss-mobile
+fvm install 3.35.7
 fvm flutter pub get
 fvm flutter gen-l10n
 fvm flutter run --dart-define=DEMO_MODE=true
@@ -69,10 +113,10 @@ Full Android Studio guide: [`../mobile/ANDROID_STUDIO.md`](../mobile/ANDROID_STU
 
 ---
 
-## 5. Optional: PostgreSQL & Redis
+## 6. Optional: PostgreSQL & Redis
 
 ```bash
-cd infrastructure/docker
+cd myboss-platform/docker
 docker compose up -d
 ```
 
@@ -80,7 +124,7 @@ Demo backend uses in-memory stores; DB schema target: [`../database/DATABASE.md`
 
 ---
 
-## 6. Environments
+## 7. Environments
 
 | `APP_ENV` | Swagger | 2FA |
 |-----------|---------|-----|
@@ -95,19 +139,10 @@ Demo backend uses in-memory stores; DB schema target: [`../database/DATABASE.md`
 
 | Issue | Fix |
 |-------|-----|
-| Port conflicts | Change ports in `.env` (3001–3005, 5173) |
+| Port conflicts | Change ports in `.env` (3001–3005, 5173, 8090) |
 | Flutter build | `fvm flutter clean && fvm flutter pub get` |
-| DB connection | Ensure Docker postgres running; match `.env` credentials |
-
----
-
-## Related docs
-
-| Document | Purpose |
-|----------|---------|
-| [`../devops/DEVOPS.md`](../devops/DEVOPS.md) | Docker demo deploy |
-| [`../security/SECURITY.md`](../security/SECURITY.md) | Secrets & auth |
-| [`../README.md`](../README.md) | Documentation index |
+| Gateway 502 | Wait 30s after first Docker build; run `./scripts/verify-backend.sh` |
+| Sibling repos not found | Export `MYBOSS_BACKEND_DIR`, `MYBOSS_ADMIN_DIR`, `MYBOSS_MOBILE_DIR` |
 
 ---
 

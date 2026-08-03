@@ -12,7 +12,7 @@ Central index for all project documentation.
 | **DevOps / Infrastructure** | [`devops/DEVOPS.md`](devops/DEVOPS.md) | [`deployment/DEPLOYMENT.md`](deployment/DEPLOYMENT.md) |
 | **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Mobile** | [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | [`EMPLOYEE_JOURNEY_COVERAGE.md`](EMPLOYEE_JOURNEY_COVERAGE.md) |
-| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [`apps/admin-portal/README.md`](../apps/admin-portal/README.md) |
+| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [`../../myboss-admin/README.md`](../../myboss-admin/README.md) |
 | **Security** | [`security/SECURITY.md`](security/SECURITY.md) | [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Apigee** | [`deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md) |
 | **QA / Testing** | [`deployment/pdf/04_TESTING_GUIDE.md`](deployment/pdf/04_TESTING_GUIDE.md) | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) |
@@ -24,7 +24,7 @@ Central index for all project documentation.
 In-memory data changes during testing. Reset squads, terms acceptance, and seed users:
 
 ```bash
-./infrastructure/scripts/reset-demo-data.sh
+./scripts/reset-demo-data.sh
 ```
 
 | Email | Purpose |
@@ -36,7 +36,7 @@ In-memory data changes during testing. Reset squads, terms acceptance, and seed 
 | `sara.h@orange.com` / `khaled.r@orange.com` | Irbid / Zarqa squad leaders |
 | `admin@orange.com` | Admin console |
 
-Seed IDs: `apps/backend/libs/common/src/demo/demo-seed.constants.ts` · Full matrix: [`database/DATABASE.md` §7](database/DATABASE.md#7-demo-seed-accounts)
+Seed IDs: `myboss-backend/libs/common/src/demo/demo-seed.constants.ts` · Full matrix: [`database/DATABASE.md` §7](database/DATABASE.md#7-demo-seed-accounts)
 
 ---
 
@@ -97,18 +97,19 @@ docs/
 ## Quick commands
 
 ```bash
-# Demo stack
+# Full demo stack (from myboss-platform)
 cp .env.example .env
-./infrastructure/scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 
 # Reset demo data before team testing
-./infrastructure/scripts/reset-demo-data.sh
+./scripts/reset-demo-data.sh
 
-# Local dev
-cd apps/backend && npm install && npm run start:dev
-cd apps/mobile && fvm flutter pub get && fvm flutter run --dart-define=DEMO_MODE=true
+# Per-app local dev
+cd ../myboss-backend && npm install && npm run start:dev
+cd ../myboss-mobile && fvm flutter pub get && fvm flutter run --dart-define=DEMO_MODE=true
+cd ../myboss-admin && npm install && npm run dev
 ```
 
 ---
@@ -119,10 +120,10 @@ Each app README lists **prerequisites**, **start steps**, **pinned versions**, a
 
 | App | Path |
 |-----|------|
-| Backend | [`apps/backend/README.md`](../apps/backend/README.md) |
-| Mobile | [`apps/mobile/README.md`](../apps/mobile/README.md) |
-| Admin | [`apps/admin-portal/README.md`](../apps/admin-portal/README.md) |
-| Docker | [`infrastructure/docker/README.md`](../infrastructure/docker/README.md) |
+| Backend | [`../../myboss-backend/README.md`](../../myboss-backend/README.md) |
+| Mobile | [`../../myboss-mobile/README.md`](../../myboss-mobile/README.md) |
+| Admin | [`../../myboss-admin/README.md`](../../myboss-admin/README.md) |
+| Platform | [`../README.md`](../README.md) |
 
 ### Git: what is committed vs ignored
 

@@ -3,12 +3,12 @@
 # Usage: ./infrastructure/scripts/run-external-demo.sh
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-cd "$REPO_DIR"
+PLATFORM_DIR="${PLATFORM_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+cd "$PLATFORM_DIR"
 
 if ! curl -sf http://127.0.0.1:8090/health >/dev/null; then
   echo "Gateway not running. Start stack first:"
-  echo "  ./infrastructure/scripts/deploy-demo-server.sh"
+  echo "  ./scripts/deploy-demo-server.sh"
   exit 1
 fi
 

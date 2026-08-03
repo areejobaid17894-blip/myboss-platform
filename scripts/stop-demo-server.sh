@@ -2,10 +2,10 @@
 # Stop my boss app demo Docker stack
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-cd "$REPO_DIR"
+PLATFORM_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$PLATFORM_DIR"
 
-COMPOSE_FILE="infrastructure/docker/docker-compose.demo.yml"
-
-docker compose -f "$COMPOSE_FILE" --profile with-admin down
+docker compose -f docker/docker-compose.demo.yml --profile with-admin down
+docker stop myboss-api-gateway 2>/dev/null || true
+docker rm myboss-api-gateway 2>/dev/null || true
 echo "Demo stack stopped."

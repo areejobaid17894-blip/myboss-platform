@@ -145,16 +145,19 @@ docker compose version
 Or use the repo script:
 
 ```bash
-git clone <repository-url> /opt/myboss/my_boss_v5
-cd /opt/myboss/my_boss_v5
-chmod +x infrastructure/scripts/*.sh
-./infrastructure/scripts/install-demo-server.sh
+git clone https://github.com/areejobaid17894-blip/myboss-backend.git /opt/myboss/myboss-backend
+git clone https://github.com/areejobaid17894-blip/myboss-admin.git /opt/myboss/myboss-admin
+git clone https://github.com/areejobaid17894-blip/myboss-mobile.git /opt/myboss/myboss-mobile
+git clone https://github.com/areejobaid17894-blip/myboss-platform.git /opt/myboss/myboss-platform
+cd /opt/myboss/myboss-platform
+chmod +x scripts/*.sh
+./scripts/install-demo-server.sh /opt/myboss
 ```
 
 ### Environment file
 
 ```bash
-cd /opt/myboss/my_boss_v5
+cd /opt/myboss/myboss-platform
 cp .env.example .env
 nano .env
 ```
@@ -180,27 +183,28 @@ Never commit `.env`. Full variable list: [`.env.example`](../../.env.example).
 ### Start backend services
 
 ```bash
-cd /opt/myboss/my_boss_v5
-./infrastructure/scripts/start-demo-server.sh
+cd /opt/myboss/myboss-platform
+./scripts/start-demo-server.sh
 ```
 
 Equivalent:
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.demo.yml up -d --build
+docker compose -f docker/docker-compose.demo.yml up -d --build
+docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 ```
 
 **With admin portal container:**
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.demo.yml \
-  --profile with-admin up -d --build
+docker compose -f docker/docker-compose.demo.yml \
+  --profile with-admin up -d --build admin-portal
 ```
 
 ### Deploy gateway + mobile web
 
 ```bash
-ALLOW_DEPLOY=1 ./infrastructure/scripts/deploy-mobile-web.sh
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ```
 
 This serves:
@@ -211,8 +215,8 @@ This serves:
 ### Optional public URL (Cloudflare tunnel)
 
 ```bash
-./infrastructure/scripts/start-demo-tunnel.sh
-# URL written to demo-public-url.txt at repo root
+./scripts/start-demo-tunnel.sh
+# URL written to demo-public-url.txt in myboss-platform
 ```
 
 ### Reset demo data (before team testing)
@@ -220,7 +224,7 @@ This serves:
 In-memory stores mutate during QA. Restore seed squads, users, and terms state:
 
 ```bash
-./infrastructure/scripts/reset-demo-data.sh
+./scripts/reset-demo-data.sh
 ```
 
 Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad**. See [`../database/DATABASE.md` § Demo data reset](../database/DATABASE.md#demo-data-reset).
@@ -230,11 +234,11 @@ Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad*
 ## 6. Verify deployment
 
 ```bash
-./infrastructure/scripts/verify-backend.sh
-./infrastructure/scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./infrastructure/scripts/verify-localhost.sh
+./scripts/verify-backend.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-localhost.sh
 
-docker compose -f infrastructure/docker/docker-compose.demo.yml ps
+docker compose -f docker/docker-compose.demo.yml ps
 curl -s http://127.0.0.1:8090/health
 ```
 
