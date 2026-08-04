@@ -53,11 +53,47 @@ myboss-repos/
 
 | Error | Cause | Fix |
 |-------|--------|-----|
+| **`unable to read from remote repository`** | SSH clone without a GitHub SSH key, or bad saved credentials | Use **HTTPS** URLs below (not `git@github.com:...`). See fix steps below. |
 | `Repository not found` | Wrong URL or old monorepo name (`my_boss_v5`) | Use the four URLs above exactly |
 | `Permission denied (publickey)` | SSH without a GitHub key | Use **HTTPS** URLs above, or add an SSH key to GitHub |
 | `git: command not found` | Git not installed | Install Git: [git-scm.com](https://git-scm.com/) |
 | `Could not resolve host` | No internet / firewall | Check network; try in a browser: https://github.com/areejobaid17894-blip/myboss-platform |
 | Only cloned one repo | Backend alone is not enough for full demo | Clone **all four** |
+
+**Fix: "unable to read from remote repository"**
+
+On the other device, run these in order:
+
+```bash
+# 1. Test GitHub is reachable
+curl -I https://github.com
+
+# 2. Clone with HTTPS (copy/paste exactly — do NOT use git@github.com)
+mkdir -p ~/myboss-repos && cd ~/myboss-repos
+git clone https://github.com/areejobaid17894-blip/myboss-platform.git
+```
+
+If step 2 still fails:
+
+```bash
+# 3. Clear wrong saved GitHub credentials (macOS)
+git credential-osxkeychain erase <<EOF
+host=github.com
+protocol=https
+EOF
+
+# Windows: Control Panel → Credential Manager → remove github.com entries
+# Then retry the HTTPS clone
+```
+
+If HTTPS still fails, download ZIPs from the browser (no Git auth needed):
+
+- https://github.com/areejobaid17894-blip/myboss-platform/archive/refs/heads/main.zip
+- https://github.com/areejobaid17894-blip/myboss-backend/archive/refs/heads/main.zip
+- https://github.com/areejobaid17894-blip/myboss-admin/archive/refs/heads/main.zip
+- https://github.com/areejobaid17894-blip/myboss-mobile/archive/refs/heads/main.zip
+
+Unzip all four into one folder and rename to `myboss-platform`, `myboss-backend`, etc. (remove the `-main` suffix).
 
 Repos are **public** — no GitHub login required for HTTPS clone.
 
