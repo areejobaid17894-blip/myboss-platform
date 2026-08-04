@@ -12,6 +12,8 @@ myboss-repos/
 
 Each project has its own README with deeper detail. This guide covers the full stack end to end.
 
+> **Note:** Links to other repos use full GitHub URLs so they work when browsing a single repo on github.com. Shell commands like `cd ../myboss-platform` assume all four projects are cloned as **siblings** on your machine.
+
 ---
 
 ## New machine checklist
@@ -152,7 +154,7 @@ cd ../myboss-mobile
 |---------|-----|
 | Admin login "Invalid email or password" | `./scripts/fix-admin-login.sh` |
 | Tunnel Error 1033 / blank page | Restart `./scripts/start-demo-tunnel.sh`, use **new** URL |
-| Backend only (no Docker) | See [backend README](../../myboss-backend/README.md#run-on-a-new-machine) Option B |
+| Backend only (no Docker) | See [backend README — Run on a new machine](https://github.com/areejobaid17894-blip/myboss-backend/blob/main/README.md#run-on-a-new-machine) Option B |
 
 ---
 
@@ -258,7 +260,7 @@ openssl rand -base64 32   # INTERNAL_SERVICE_TOKEN
 | `demo-public-url.txt` | External APK | From platform tunnel |
 | `android/local.properties` | Android | Android Studio |
 
-Per-project READMEs: [backend](../../myboss-backend/README.md) · [admin](../../myboss-admin/README.md) · [mobile](../../myboss-mobile/README.md) · [platform](../README.md)
+Per-project READMEs: [backend](https://github.com/areejobaid17894-blip/myboss-backend/blob/main/README.md) · [admin](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md) · [mobile](https://github.com/areejobaid17894-blip/myboss-mobile/blob/main/README.md) · [platform](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/README.md)
 
 ---
 
@@ -317,7 +319,7 @@ npm run start:dev
 
 Health check: `curl http://localhost:3001/api/v1/health`
 
-→ [backend README](../../myboss-backend/README.md)
+→ [backend README](https://github.com/areejobaid17894-blip/myboss-backend/blob/main/README.md)
 
 ### Admin (Vite)
 
@@ -332,7 +334,7 @@ npm run dev
 
 Open http://localhost:5173
 
-→ [admin README](../../myboss-admin/README.md)
+→ [admin README](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md)
 
 ### Mobile (Flutter)
 
@@ -349,7 +351,7 @@ Web hot reload: `./run-local-web.sh` (gateway must be on :8090)
 
 Android emulator: add `--dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090`
 
-→ [mobile README](../../myboss-mobile/README.md)
+→ [mobile README](https://github.com/areejobaid17894-blip/myboss-mobile/blob/main/README.md)
 
 ---
 

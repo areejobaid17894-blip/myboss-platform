@@ -12,7 +12,7 @@ Central index for all project documentation.
 | **DevOps / Infrastructure** | [`devops/DEVOPS.md`](devops/DEVOPS.md) | [`deployment/DEPLOYMENT.md`](deployment/DEPLOYMENT.md) |
 | **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Mobile** | [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | [`EMPLOYEE_JOURNEY_COVERAGE.md`](EMPLOYEE_JOURNEY_COVERAGE.md) |
-| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [`../../myboss-admin/README.md`](../../myboss-admin/README.md) |
+| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [myboss-admin README](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md) |
 | **Security** | [`security/SECURITY.md`](security/SECURITY.md) | [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Apigee / API Platform** | [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md) | [`deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) |
 | **External demo / APK** | [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md) | Error 1033, Cloudflare tunnel |
@@ -135,12 +135,12 @@ cd ../myboss-admin && npm install && npm run dev
 
 Each app README lists **prerequisites**, **start steps**, **pinned versions**, and **files not in git**:
 
-| App | Path |
+| App | Link |
 |-----|------|
-| Backend | [`../../myboss-backend/README.md`](../../myboss-backend/README.md) |
-| Mobile | [`../../myboss-mobile/README.md`](../../myboss-mobile/README.md) |
-| Admin | [`../../myboss-admin/README.md`](../../myboss-admin/README.md) |
-| Platform | [`../README.md`](../README.md) |
+| Backend | [myboss-backend README](https://github.com/areejobaid17894-blip/myboss-backend/blob/main/README.md) |
+| Mobile | [myboss-mobile README](https://github.com/areejobaid17894-blip/myboss-mobile/blob/main/README.md) |
+| Admin | [myboss-admin README](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md) |
+| Platform | [myboss-platform README](https://github.com/areejobaid17894-blip/myboss-platform/blob/main/README.md) |
 
 ### Git: what is committed vs ignored
 
