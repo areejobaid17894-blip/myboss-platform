@@ -14,6 +14,79 @@ Each project has its own README with deeper detail. This guide covers the full s
 
 ---
 
+## New machine checklist
+
+Follow this on a **fresh laptop or VM** to run the full demo (backend + admin + mobile web).
+
+**1. Install**
+
+| Tool | Version |
+|------|---------|
+| Node.js | 20 LTS |
+| Docker Desktop | 24+ (Compose v2) |
+| Flutter | 3.35.7 (only if building mobile web/APK) |
+
+**2. Get the four projects** as siblings in one folder, e.g. `~/myboss-repos/`.
+
+**3. Configure platform env** (required for Docker):
+
+```bash
+cd myboss-platform
+cp .env.example .env
+chmod +x scripts/*.sh
+```
+
+Edit `.env` and set:
+
+```bash
+JWT_SECRET=$(openssl rand -base64 48)
+INTERNAL_SERVICE_TOKEN=$(openssl rand -base64 32)
+DEMO_ADMIN_PASSWORD=admin123
+```
+
+**4. Start the stack**
+
+```bash
+./scripts/deploy-demo-server.sh 127.0.0.1
+ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/verify-backend.sh
+./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+```
+
+**5. Open in browser**
+
+| App | URL |
+|-----|-----|
+| Admin | http://127.0.0.1:8090/login |
+| Mobile web | http://127.0.0.1:8090/app/ |
+
+**Admin:** `admin@orange.com` / `admin123` → OTP (auto in demo)
+
+**6. Optional — public URL for remote testers**
+
+```bash
+./scripts/start-demo-tunnel.sh
+# URL saved to demo-public-url.txt
+```
+
+**7. Optional — Android APK**
+
+```bash
+cd ../myboss-mobile
+./build-external-android.sh
+# → build/android-dist/myboss-demo-external.apk
+```
+
+**Troubleshooting**
+
+| Problem | Fix |
+|---------|-----|
+| Admin login "Invalid email or password" | `./scripts/fix-admin-login.sh` |
+| Tunnel Error 1033 / blank page | Restart `./scripts/start-demo-tunnel.sh`, use **new** URL |
+| Backend only (no Docker) | See [backend README](../../myboss-backend/README.md#run-on-a-new-machine) Option B |
+
+---
+
 ## What goes where
 
 Runtime files belong **inside** the project that owns them — not in the parent folder.

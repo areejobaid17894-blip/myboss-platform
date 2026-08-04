@@ -22,6 +22,9 @@ services:
       APP_ENV: demo
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
       USER_SERVICE_URL: http://user-service:3002/api/v1
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@orange.com}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123}
+      TWO_FA_DEMO_ENABLED: ${TWO_FA_DEMO_ENABLED:-true}
 
   user-service:
     build:

@@ -62,9 +62,12 @@ Generate secrets and add them to `.env`:
 ```bash
 JWT_SECRET=$(openssl rand -base64 48)
 INTERNAL_SERVICE_TOKEN=$(openssl rand -base64 32)
+DEMO_ADMIN_PASSWORD=admin123
 ```
 
-Optional: `DEMO_HOST`, `TAWK_PROPERTY_ID`, `DEMO_ADMIN_PASSWORD`.
+Optional: `DEMO_HOST`, `TAWK_PROPERTY_ID`.
+
+**New machine?** Follow [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md#new-machine-checklist).
 
 ---
 
@@ -200,6 +203,7 @@ For testers on mobile data (outside your Wi‑Fi):
 | `stop-demo-server.sh` | Stop Docker demo stack |
 | `verify-backend.sh` | Health checks :3001–3005 |
 | `verify-mobile-api.sh` | Gateway + mobile API smoke test |
+| `fix-admin-login.sh` | Recreate auth if admin password fails |
 | `install-demo-server.sh [DIR]` | One-time Docker setup on a VM |
 
 Only `deploy-mobile-web.sh` requires `ALLOW_DEPLOY=1`.

@@ -13,11 +13,17 @@ fi
 
 [ -f .env ] || cp .env.example .env
 
+# Ensure demo admin password matches UI pre-fill (admin123)
+if grep -q '^DEMO_ADMIN_PASSWORD=change-me' .env 2>/dev/null; then
+  sed -i '' 's/^DEMO_ADMIN_PASSWORD=change-me/DEMO_ADMIN_PASSWORD=admin123/' .env
+fi
+
 echo "==> Backend: $MYBOSS_BACKEND_DIR"
 echo "==> Admin:   $MYBOSS_ADMIN_DIR"
 echo "==> DEMO_HOST: $DEMO_HOST"
 
 docker compose -f docker/docker-compose.demo.yml up -d --build
+docker compose -f docker/docker-compose.demo.yml up -d --force-recreate auth-service
 docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 
 sleep 15
