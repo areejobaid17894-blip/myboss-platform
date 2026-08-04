@@ -26,7 +26,40 @@ Follow this on a **fresh laptop or VM** to run the full demo (backend + admin + 
 | Docker Desktop | 24+ (Compose v2) |
 | Flutter | 3.35.7 (only if building mobile web/APK) |
 
-**2. Get the four projects** as siblings in one folder, e.g. `~/myboss-repos/`.
+**2. Download the four projects**
+
+The app is **four separate repos** — not one monorepo. Clone all four as **siblings** in one folder:
+
+```bash
+mkdir -p ~/myboss-repos && cd ~/myboss-repos
+
+git clone https://github.com/areejobaid17894-blip/myboss-backend.git
+git clone https://github.com/areejobaid17894-blip/myboss-admin.git
+git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
+git clone https://github.com/areejobaid17894-blip/myboss-platform.git
+```
+
+You should end up with:
+
+```
+myboss-repos/
+├── myboss-backend/
+├── myboss-admin/
+├── myboss-mobile/
+└── myboss-platform/
+```
+
+**Clone troubleshooting**
+
+| Error | Cause | Fix |
+|-------|--------|-----|
+| `Repository not found` | Wrong URL or old monorepo name (`my_boss_v5`) | Use the four URLs above exactly |
+| `Permission denied (publickey)` | SSH without a GitHub key | Use **HTTPS** URLs above, or add an SSH key to GitHub |
+| `git: command not found` | Git not installed | Install Git: [git-scm.com](https://git-scm.com/) |
+| `Could not resolve host` | No internet / firewall | Check network; try in a browser: https://github.com/areejobaid17894-blip/myboss-platform |
+| Only cloned one repo | Backend alone is not enough for full demo | Clone **all four** |
+
+Repos are **public** — no GitHub login required for HTTPS clone.
 
 **3. Configure platform env** (required for Docker):
 
