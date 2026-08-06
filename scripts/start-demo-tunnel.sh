@@ -25,6 +25,7 @@ LOG_FILE="${PLATFORM_DIR}/demo-tunnel.log"
 SUPERVISOR_PID_FILE="${PLATFORM_DIR}/demo-tunnel-supervisor.pid"
 
 stop_tunnel() {
+  screen -S myboss-cf -X quit 2>/dev/null || true
   if [ -f "$SUPERVISOR_PID_FILE" ]; then
     kill "$(cat "$SUPERVISOR_PID_FILE")" 2>/dev/null || true
     rm -f "$SUPERVISOR_PID_FILE"
@@ -35,30 +36,23 @@ stop_tunnel() {
 
 stop_tunnel
 sleep 2
-: > "$LOG_FILE"
 rm -f "$URL_FILE"
+: > "$LOG_FILE"
 
 echo "==> Starting Cloudflare tunnel → ${GATEWAY_URL}"
-echo ""
-echo "IMPORTANT: Keep this terminal open, or run in tmux/screen."
-echo "Quick tunnels stop when cloudflared exits."
+echo "    Using screen session: myboss-cf (survives terminal close)"
 echo ""
 
-chmod +x "$SCRIPT_DIR/demo-tunnel-supervisor.sh"
-# setsid + nohup keeps tunnel alive after the terminal closes
-if command -v setsid >/dev/null 2>&1; then
-  setsid nohup "$SCRIPT_DIR/demo-tunnel-supervisor.sh" >> "$LOG_FILE" 2>&1 &
-else
-  nohup "$SCRIPT_DIR/demo-tunnel-supervisor.sh" >> "$LOG_FILE" 2>&1 &
-fi
-SUPERVISOR_PID=$!
-echo "$SUPERVISOR_PID" > "$SUPERVISOR_PID_FILE"
-disown "$SUPERVISOR_PID" 2>/dev/null || true
+MARKER="tunnel-start-$(date -u +%s)"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $MARKER" >> "$LOG_FILE"
+
+screen -dmS myboss-cf bash -c "cloudflared tunnel --url ${GATEWAY_URL} --protocol http2 --no-autoupdate 2>&1 | tee -a ${LOG_FILE}"
 
 PUBLIC_URL=""
 for _ in $(seq 1 90); do
-  if [ -f "$URL_FILE" ] && [ -s "$URL_FILE" ]; then
-    PUBLIC_URL="$(tr -d '[:space:]' < "$URL_FILE")"
+  PUBLIC_URL="$(awk "/${MARKER}/{flag=1} flag" "$LOG_FILE" | grep -oE 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' | tail -1 || true)"
+  if [ -n "$PUBLIC_URL" ]; then
+    echo "$PUBLIC_URL" > "$URL_FILE"
     break
   fi
   sleep 1
@@ -70,8 +64,14 @@ if [ -z "$PUBLIC_URL" ]; then
 fi
 
 HTTP_CODE="000"
-for _ in $(seq 1 30); do
-  HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' "${PUBLIC_URL}/health" 2>/dev/null || echo 000)"
+for _ in $(seq 1 45); do
+  HOST="${PUBLIC_URL#https://}"
+  IP="$(dig +short @8.8.8.8 "$HOST" 2>/dev/null | head -1)"
+  if [ -n "$IP" ]; then
+    HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' --resolve "${HOST}:443:${IP}" --max-time 15 "${PUBLIC_URL}/health" 2>/dev/null || echo 000)"
+  else
+    HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "${PUBLIC_URL}/health" 2>/dev/null || echo 000)"
+  fi
   if [ "$HTTP_CODE" = "200" ]; then
     break
   fi
@@ -87,12 +87,23 @@ echo "Admin:   ${PUBLIC_URL}/login"
 echo "Health:  HTTP ${HTTP_CODE}"
 echo "Saved to: demo-public-url.txt"
 echo ""
-echo "Stop: kill \$(cat demo-tunnel-supervisor.pid)"
+echo "Stop: screen -S myboss-cf -X quit"
 
 if [ "$HTTP_CODE" != "200" ]; then
   echo ""
   echo "WARNING: Tunnel URL not returning 200 yet."
-  echo "Check cloudflared is running: pgrep -fl cloudflared"
+  echo "Check: pgrep -fl cloudflared && screen -ls"
   echo "Logs: tail -f demo-tunnel.log"
   exit 1
 fi
+
+# Stability check — must stay up 20s
+sleep 10
+HTTP2="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${PUBLIC_URL}/health" 2>/dev/null || echo 000)"
+sleep 10
+HTTP3="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${PUBLIC_URL}/health" 2>/dev/null || echo 000)"
+if [ "$HTTP2" != "200" ] || [ "$HTTP3" != "200" ]; then
+  echo "FAIL: Tunnel unstable (${HTTP2}, ${HTTP3}). Check memory / cloudflared."
+  exit 1
+fi
+echo "Stability: OK (${HTTP2}, ${HTTP3})"

@@ -1,21 +1,24 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: myboss-postgres
+  mariadb:
+    image: mariadb:11.4
+    container_name: myboss-mariadb
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '3306:3306'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-myboss}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-myboss_dev}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootchangeme}
+      MARIADB_USER: ${MARIADB_USER:-myboss}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-changeme}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-myboss_auth}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-myboss}']
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 8
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -32,5 +35,5 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
+  mariadb_data:
   redis_data:

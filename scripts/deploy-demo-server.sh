@@ -26,6 +26,11 @@ docker compose -f docker/docker-compose.demo.yml up -d --build
 docker compose -f docker/docker-compose.demo.yml up -d --force-recreate auth-service
 docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 
+if [ "${SKIP_GATEWAY:-}" != "1" ]; then
+  echo "==> Starting API gateway on :8090"
+  ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+fi
+
 sleep 15
 ./scripts/verify-backend.sh || true
 echo "Demo ready — gateway :8090 (run deploy-mobile-web.sh after backend)"

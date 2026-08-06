@@ -1,7 +1,9 @@
 # Database Schema
 
 **Audience:** Backend developers, DBAs, architects  
-**Status:** Demo uses **in-memory repositories** per microservice. This document is the **target production PostgreSQL schema** aligned with the employee journey (Rev 1.0, July 2026).
+**Status:** Demo defaults to **in-memory** (`DB_ENABLED=false`). **MariaDB 11** is the team database standard — auth, user, config, and squad services have TypeORM implementations; enable with `DB_ENABLED=true`. Survey service follows the same pattern (in-memory today; schema in `docker/mariadb/init/02-schema-reference.sql`).
+
+This document describes the **target MariaDB schema** aligned with the employee journey (Rev 1.0, July 2026).
 
 For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURITY.md) and [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md).
 
@@ -19,15 +21,19 @@ For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURI
 
 ## 2. Service ownership
 
-| Service | Database (production) | Tables |
-|---------|----------------------|--------|
-| **auth-service** | `myboss_auth` | `eligible_participants`, `otp_sessions` |
-| **user-service** | `myboss_user` | `user_profiles` |
-| **config-service** | `myboss_config` | `buildings`, reference config |
-| **squad-service** | `myboss_squad` | `squads`, `squad_members`, `squad_join_requests` |
-| **survey-service** | `myboss_survey` | `survey_responses`, `gallery_items`, `notifications`, surveys catalog |
+| Service | Database (production) | Tables | MariaDB status |
+|---------|----------------------|--------|----------------|
+| **auth-service** | `myboss_auth` | `eligible_participants`, `otp_sessions` | **Implemented** (TypeORM) |
+| **user-service** | `myboss_user` | `user_profiles` | **Implemented** (TypeORM) |
+| **config-service** | `myboss_config` | `buildings`, reference config | **Implemented** (TypeORM) |
+| **squad-service** | `myboss_squad` | `squads`, `squad_members`, `squad_join_requests` | **Implemented** (TypeORM) |
+| **survey-service** | `myboss_survey` | `survey_responses`, `gallery_items`, `notifications`, surveys catalog | Planned (in-memory + JSON files today) |
 
-Demo today: all data in process memory; PostgreSQL compose exists at `docker/docker-compose.yml` for local dev only.
+Demo today: set `DB_ENABLED=false` for in-memory mode, or `DB_ENABLED=true` with MariaDB compose for persistent auth/user data.
+
+**Local MariaDB:** `cd myboss-platform/docker && docker compose up -d mariadb redis`
+
+**Demo + MariaDB:** `docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build` and set `DB_ENABLED=true` in `.env`.
 
 ---
 

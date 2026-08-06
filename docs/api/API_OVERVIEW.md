@@ -15,7 +15,7 @@
 
 | Environment | Pattern | Example |
 |---|---|---|
-| Development (direct) | `http://localhost:{port}/api/v1` | Auth `:3001`, User `:3002`, Config `:3003`, Squad `:3004`, Survey `:3005` |
+| Development (direct) | `http://localhost:{port}/api/v1` | Auth `:3001`, User `:3002`, Config `:3003`, Squad `:3004`, Survey `:3005`, Notification `:3006` |
 | Development (gateway) | `http://localhost:8090/{service}/api/v1` | `http://localhost:8090/auth/api/v1/auth/sign-in` |
 | Apigee (future) | `https://api-demo.orange.com/{service}/api/v1` | Same path structure as gateway |
 
@@ -30,6 +30,7 @@ Each service exposes OpenAPI (Swagger UI) when `APP_ENV=development|demo` or `SW
 | Config | http://localhost:3003/api/v1/docs |
 | Squad | http://localhost:3004/api/v1/docs |
 | Survey | http://localhost:3005/api/v1/docs |
+| Notification | http://localhost:3006/api/v1/docs |
 
 Via gateway (same paths under each prefix): `http://localhost:8090/auth/api/v1/docs`, etc.
 
@@ -89,6 +90,8 @@ All services return errors in Orange Common Response format:
 | PUT | `/users/:id/onboarding` | JWT | Complete onboarding |
 | PUT | `/users/:id/profile` | JWT | Update profile |
 | PUT | `/users/:id/squad` | JWT | Assign squad to profile |
+| POST | `/users/:id/device-token` | JWT | Register FCM device token for push |
+| DELETE | `/users/:id/device-token` | JWT | Revoke device token on logout |
 | POST | `/users/ensure` | Internal | Sync profile after auth |
 
 ### Squads (`squad-service`)
@@ -129,6 +132,17 @@ All services return errors in Orange Common Response format:
 | POST | `/notifications/:id/read` | JWT | Mark notification read |
 
 See [`docs/architecture/GALLERY_NOTIFICATIONS.md`](../architecture/GALLERY_NOTIFICATIONS.md) for the unified gallery ↔ notifications model.
+
+### Push dispatch (`notification-service`)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/push/status` | Public | FCM config status (`dry-run` vs `live`) |
+| POST | `/push/internal/dispatch` | Internal | Fan-out push to employee IDs |
+| POST | `/push/internal/dispatch-audience` | Internal | Resolve audience → dispatch |
+| GET | `/push/audit` | JWT + ADMIN | Recent push delivery audit |
+
+Setup: [`docs/PUSH_FIREBASE_SETUP.md`](../PUSH_FIREBASE_SETUP.md)
 
 ### Config & chat (`config-service`)
 

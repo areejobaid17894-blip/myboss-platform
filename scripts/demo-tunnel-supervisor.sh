@@ -21,22 +21,20 @@ while true; do
   MARKER="tunnel-start-$(date -u +%s)"
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] starting cloudflared ($MARKER)" >> "$LOG_FILE"
 
-  (
-    for _ in $(seq 1 90); do
-      PUBLIC_URL="$(write_url_from_log "$MARKER")"
-      if [ -n "$PUBLIC_URL" ]; then
-        echo "$PUBLIC_URL" > "$URL_FILE"
-        exit 0
-      fi
-      sleep 1
-    done
-  ) &
-  WATCHER_PID=$!
-
-  # Run in foreground so the supervisor reliably waits; nohup/setsid keeps us alive after terminal exit.
   cloudflared tunnel --url "${GATEWAY_URL}" --protocol http2 --no-autoupdate >> "$LOG_FILE" 2>&1 &
   CF_PID=$!
   echo "$CF_PID" > "$PID_FILE"
+
+  (
+    while kill -0 "$CF_PID" 2>/dev/null; do
+      PUBLIC_URL="$(write_url_from_log "$MARKER")"
+      if [ -n "$PUBLIC_URL" ]; then
+        echo "$PUBLIC_URL" > "$URL_FILE"
+      fi
+      sleep 3
+    done
+  ) &
+  WATCHER_PID=$!
 
   wait "$CF_PID" 2>/dev/null || true
   kill "$WATCHER_PID" 2>/dev/null || true

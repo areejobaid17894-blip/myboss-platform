@@ -3,12 +3,43 @@
 #   export MYBOSS_ADMIN_DIR=../myboss-admin
 #   docker compose -f docker/docker-compose.demo.yml up -d --build
 #
+# With MariaDB persistence:
+#   docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build
+#
 # Default: expects myboss-backend and myboss-admin as siblings of myboss-platform.
 
 x-backend: &backend_ctx
   context: ${MYBOSS_BACKEND_DIR:-../myboss-backend}
 
+x-db-env: &db_env
+  DB_ENABLED: ${DB_ENABLED:-false}
+  MARIADB_HOST: ${MARIADB_HOST:-mariadb}
+  MARIADB_PORT: ${MARIADB_PORT:-3306}
+  MARIADB_USER: ${MARIADB_USER:-myboss}
+  MARIADB_PASSWORD: ${MARIADB_PASSWORD:-changeme}
+  DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-true}
+
 services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: myboss-mariadb
+    restart: unless-stopped
+    profiles: [with-mariadb]
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootchangeme}
+      MARIADB_USER: ${MARIADB_USER:-myboss}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-changeme}
+      MARIADB_DATABASE: myboss_auth
+    volumes:
+      - myboss-mariadb-data:/var/lib/mysql
+      - ./mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
   auth-service:
     build:
       <<: *backend_ctx
@@ -20,11 +51,16 @@ services:
     environment:
       NODE_ENV: demo
       APP_ENV: demo
+      <<: *db_env
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
       USER_SERVICE_URL: http://user-service:3002/api/v1
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@orange.com}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123}
       TWO_FA_DEMO_ENABLED: ${TWO_FA_DEMO_ENABLED:-true}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: false
 
   user-service:
     build:
@@ -37,8 +73,17 @@ services:
     environment:
       NODE_ENV: demo
       APP_ENV: demo
+      <<: *db_env
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
       CONFIG_SERVICE_URL: http://config-service:3003/api/v1/config/employee-settings
+      SQUAD_SERVICE_URL: http://squad-service:3004/api/v1
+      DEMO_DEVICE_TOKENS_FILE: /app/data/demo-device-tokens.json
+    volumes:
+      - myboss-demo-gallery:/app/data
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: false
 
   config-service:
     build:
@@ -51,6 +96,11 @@ services:
     environment:
       NODE_ENV: demo
       APP_ENV: demo
+      <<: *db_env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: false
 
   squad-service:
     build:
@@ -63,9 +113,14 @@ services:
     environment:
       NODE_ENV: demo
       APP_ENV: demo
+      <<: *db_env
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
       USER_SERVICE_URL: http://user-service:3002/api/v1
       SURVEY_SERVICE_URL: http://survey-service:3005/api/v1
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: false
 
   survey-service:
     build:
@@ -78,11 +133,42 @@ services:
     environment:
       NODE_ENV: demo
       APP_ENV: demo
+      <<: *db_env
       USER_SERVICE_URL: http://user-service:3002/api/v1
+      NOTIFICATION_SERVICE_URL: http://notification-service:3006/api/v1
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
+      PUSH_DISPATCH_ENABLED: ${PUSH_DISPATCH_ENABLED:-true}
       DEMO_GALLERY_FILE: /app/data/demo-gallery.json
       DEMO_GALLERY_TZ: Asia/Amman
     volumes:
       - myboss-demo-gallery:/app/data
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        required: false
+      notification-service:
+        condition: service_started
+        required: false
+
+  notification-service:
+    build:
+      <<: *backend_ctx
+      dockerfile: docker/Dockerfile.notification
+    container_name: myboss-notification
+    restart: unless-stopped
+    ports: ['3006:3006']
+    env_file: [../.env]
+    environment:
+      NODE_ENV: demo
+      APP_ENV: demo
+      USER_SERVICE_URL: http://user-service:3002/api/v1
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-demo-internal-sync}
+      # FCM_* loaded from env_file (../.env) — do not override here or dry-run wins
+    volumes:
+      - ${FCM_SERVICE_ACCOUNT_HOST_PATH:-../secrets/fcm-service-account.json}:/run/secrets/fcm-service-account.json:ro
+    depends_on:
+      user-service:
+        condition: service_started
 
   admin-portal:
     build:
@@ -98,3 +184,4 @@ services:
 
 volumes:
   myboss-demo-gallery:
+  myboss-mariadb-data:

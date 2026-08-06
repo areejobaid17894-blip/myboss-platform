@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Verify all my boss app backend services are healthy
+# Verify all my boss app backend services are healthy (including notification-service)
 set -euo pipefail
 
 BASE="${API_BASE:-http://localhost}"
-PORTS=(3001 3002 3003 3004 3005)
-NAMES=(auth user config squad survey)
+GATEWAY="${GATEWAY_BASE:-http://127.0.0.1:8090}"
+PORTS=(3001 3002 3003 3004 3005 3006)
+NAMES=(auth user config squad survey notification)
 FAILED=0
 
 for i in "${!PORTS[@]}"; do
@@ -18,6 +19,17 @@ for i in "${!PORTS[@]}"; do
     FAILED=1
   fi
 done
+
+echo ""
+echo "Push / FCM status:"
+if curl -sf "$GATEWAY/notification/api/v1/push/status" 2>/dev/null; then
+  echo ""
+elif curl -sf "$BASE:3006/api/v1/push/status" 2>/dev/null; then
+  echo ""
+else
+  echo "FAIL push/status"
+  FAILED=1
+fi
 
 echo ""
 echo "Auth sign-in smoke test:"

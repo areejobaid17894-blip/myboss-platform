@@ -81,7 +81,7 @@ This is the fastest way to see everything working — backend, admin, and mobile
 ./scripts/deploy-demo-server.sh 127.0.0.1
 ```
 
-Brings up five NestJS services (3001–3005) and the admin container (8081). First build takes ~30 seconds.
+Brings up six NestJS services (3001–3006) and the admin container (8081). First build takes ~30 seconds.
 
 **2. Build mobile web and start the gateway**
 
@@ -104,6 +104,7 @@ Compiles Flutter web from `../myboss-mobile` and serves it through nginx on **80
 | http://127.0.0.1:8090/login | Admin console |
 | http://127.0.0.1:8090/health | Gateway health |
 | http://127.0.0.1:8090/auth/api/v1/docs | Swagger (auth) |
+| http://127.0.0.1:8090/notification/api/v1/push/status | FCM status (dry-run vs live) |
 
 **Demo logins:** Admin `admin@orange.com` / `admin123` · Mobile `demo@orange.com` (OTP auto-fills in demo mode). Mobile users must accept Terms & Conditions after OTP.
 
@@ -169,7 +170,7 @@ Quick tunnels die when `cloudflared` stops — keep the process running and your
 |---|--------------|---------------------|
 | API gateway | nginx on `:8090` | Orange **Apigee** |
 | API paths | `/auth/api/v1`, `/user/api/v1`, … | Same paths |
-| Microservices | Docker `:3001–3005` | Internal only, behind Apigee |
+| Microservices | Docker `:3001–3006` | Internal only, behind Apigee |
 
 nginx mirrors Apigee routing so mobile and admin can be tested before Apigee is wired up. Production does **not** use nginx as the public gateway.
 
@@ -201,7 +202,7 @@ For testers on mobile data (outside your Wi‑Fi):
 | `reset-demo-data.sh` | Restore in-memory demo seed |
 | `start-demo-tunnel.sh` | Cloudflare public URL |
 | `stop-demo-server.sh` | Stop Docker demo stack |
-| `verify-backend.sh` | Health checks :3001–3005 |
+| `verify-backend.sh` | Health checks :3001–3006 + push status |
 | `verify-mobile-api.sh` | Gateway + mobile API smoke test |
 | `fix-admin-login.sh` | Recreate auth if admin password fails |
 | `install-demo-server.sh [DIR]` | One-time Docker setup on a VM |
@@ -220,6 +221,9 @@ These files are created on your machine — copy from the `.example` templates w
 | `demo-public-url.txt` | Public tunnel demos | `./scripts/start-demo-tunnel.sh` |
 | `demo-tunnel.log` | Auto | Written by tunnel script |
 | `docker/data/` | Auto | Postgres volume when Docker runs |
+| `secrets/fcm-service-account.json` | Push notifications | Download from Firebase Console — never commit |
+
+**Push notifications:** See [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md).
 
 ---
 
@@ -231,6 +235,7 @@ These files are created on your machine — copy from the `.example` templates w
 | Docs index | [`docs/README.md`](docs/README.md) |
 | Apigee vs nginx | [`docs/architecture/APIGEE_VS_NGINX.md`](docs/architecture/APIGEE_VS_NGINX.md) |
 | Tunnel, Error 1033, external APK | [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md) |
+| Push notifications (Firebase) | [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md) |
 | DevOps / production deploy | [`docs/devops/DEVOPS.md`](docs/devops/DEVOPS.md) |
 | Environment setup | [`docs/deployment/ENVIRONMENT_SETUP.md`](docs/deployment/ENVIRONMENT_SETUP.md) |
 | Database & demo seed | [`docs/database/DATABASE.md`](docs/database/DATABASE.md) |

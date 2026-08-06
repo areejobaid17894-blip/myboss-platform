@@ -8,3 +8,4 @@ demo-public-url.txt
 *.log
 demo-tunnel*.pid
 docker/data/
+secrets/
