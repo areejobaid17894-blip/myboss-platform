@@ -11,7 +11,7 @@ This project does not contain application source. The Flutter mobile app, React 
 | Area | Purpose |
 |------|---------|
 | `scripts/` | Deploy, verify, reset demo data, Cloudflare tunnel |
-| `docker/` | Compose stack, nginx gateway config, Postgres |
+| `docker/` | Compose stack, nginx gateway config, MariaDB init |
 | `docs/` | Architecture, DevOps, API notes, team guides |
 
 ---
@@ -220,7 +220,7 @@ These files are created on your machine — copy from the `.example` templates w
 | `.env` | Always (Docker deploy) | `cp .env.example .env` |
 | `demo-public-url.txt` | Public tunnel demos | `./scripts/start-demo-tunnel.sh` |
 | `demo-tunnel.log` | Auto | Written by tunnel script |
-| `docker/data/` | Auto | Postgres volume when Docker runs |
+| `docker/data/` | Auto | MariaDB volume when Docker runs with `mariadb` service |
 | `secrets/fcm-service-account.json` | Push notifications | Download from Firebase Console — never commit |
 
 **Push notifications:** See [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md).

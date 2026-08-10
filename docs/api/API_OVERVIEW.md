@@ -38,8 +38,8 @@ Via gateway (same paths under each prefix): `http://localhost:8090/auth/api/v1/d
 
 | Class | Endpoints | Auth |
 |---|---|---|
-| **Public** | `POST /auth/sign-in`, `/sign-up`, `/verify-2fa`, `/resend-otp`, `/refresh`, `/admin-sign-in` | None |
-| **Public** | `GET /config/*` (read), `GET /chat/config`, `GET /chat/health`, `GET /health` | None |
+| **Public** | `POST /auth/sign-in`, `/verify-2fa`, `/resend-otp`, `/refresh`, `/admin-sign-in` | None |
+| **Public** | `GET /config/buildings`, `/config/segments`, `/config/employee-settings`, `GET /chat/config`, `GET /chat/health`, `GET /health` | None |
 | **Internal** | `POST /users/ensure`, `PUT /users/:id/squad` | `X-Internal-Service-Token` header (service sync) or JWT + `ADMIN` for squad assign |
 | **JWT required** | All other mobile endpoints | `Authorization: Bearer {accessToken}` |
 | **Admin** | User CRUD, survey CRUD, config writes, analytics, company/governorate reports | JWT + `admin` role |
@@ -75,8 +75,7 @@ All services return errors in Orange Common Response format:
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| POST | `/auth/sign-in` | Public | Start OTP sign-in |
-| POST | `/auth/sign-up` | Public | Start OTP registration |
+| POST | `/auth/sign-in` | Public | Start OTP sign-in (admin must pre-register employee) |
 | POST | `/auth/verify-2fa` | Public | Verify OTP → JWT tokens |
 | POST | `/auth/resend-otp` | Public | Resend OTP |
 | POST | `/auth/refresh` | Public | Refresh access token |
@@ -127,8 +126,8 @@ All services return errors in Orange Common Response format:
 | POST | `/gallery` | JWT + squad | Upload gallery item (`source=employee`) |
 | POST | `/notifications` | JWT + ADMIN | Compose notification → gallery announcement + inbox |
 | GET | `/notifications/history` | JWT + ADMIN | Admin sent history |
-| GET | `/notifications/for-user` | JWT | Employee inbox (audience-filtered) |
-| GET | `/notifications/unread-count` | JWT | Unread count for home banner |
+| GET | `/notifications/for-user` | JWT | Employee inbox (audience-filtered, includes `imageUrl`) |
+| GET | `/notifications/:id` | JWT | Full notification detail (`?userId=`) |
 | POST | `/notifications/:id/read` | JWT | Mark notification read |
 
 See [`docs/architecture/GALLERY_NOTIFICATIONS.md`](../architecture/GALLERY_NOTIFICATIONS.md) for the unified gallery ↔ notifications model.

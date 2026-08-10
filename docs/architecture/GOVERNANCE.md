@@ -9,7 +9,7 @@
 |---|---|
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | Endpoint catalogue + auth classes |
 | [`../deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md) | Apigee proxy routes and policies |
-| [`DATA_MODEL.md`](DATA_MODEL.md) | Target PostgreSQL schema |
+| [`DATA_MODEL.md`](DATA_MODEL.md) | Target MariaDB schema (redirect → `DATABASE.md`) |
 | [`APIGEE_CHAT.md`](APIGEE_CHAT.md) | Chat-specific proxy notes |
 
 ## Architecture

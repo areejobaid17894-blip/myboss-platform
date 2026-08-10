@@ -58,7 +58,7 @@ GitHub Actions CI/CD
     │           │           │
     └───────────┼───────────┘
                 │
-         PostgreSQL / Redis
+         MariaDB (myboss) / Redis
 ```
 
 ## Backend Deployment

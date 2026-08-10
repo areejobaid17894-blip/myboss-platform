@@ -10,7 +10,7 @@ Central index for all project documentation.
 |------|---------------|-----------|
 | **All teams (handoff)** | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) | Root [`README.md`](../README.md) |
 | **DevOps / Infrastructure** | [`devops/DEVOPS.md`](devops/DEVOPS.md) | [`deployment/DEPLOYMENT.md`](deployment/DEPLOYMENT.md) |
-| **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
+| **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) — **single shared MariaDB `myboss`** | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Mobile** | [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | [`PUSH_FIREBASE_SETUP.md`](PUSH_FIREBASE_SETUP.md), [`EMPLOYEE_JOURNEY_COVERAGE.md`](EMPLOYEE_JOURNEY_COVERAGE.md) |
 | **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [myboss-admin README](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md) |
 | **Security** | [`security/SECURITY.md`](security/SECURITY.md) | [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
@@ -38,7 +38,7 @@ In-memory data changes during testing. Reset squads, terms acceptance, and seed 
 | `sara.h@orange.com` / `khaled.r@orange.com` | Irbid / Zarqa squad leaders |
 | `admin@orange.com` | Admin console |
 
-Seed IDs: `myboss-backend/libs/common/src/demo/demo-seed.constants.ts` · Full matrix: [`database/DATABASE.md` §7](database/DATABASE.md#7-demo-seed-accounts)
+Seed IDs: `myboss-backend/libs/common/src/demo/demo-seed.constants.ts` · Full matrix: [`database/DATABASE.md` §8](database/DATABASE.md#8-demo-seed-accounts)
 
 ---
 
@@ -67,7 +67,7 @@ docs/
 ├── OPEN_QUESTIONS.md            ← Pending product decisions
 │
 ├── database/
-│   └── DATABASE.md              ← CANONICAL schema + demo seed
+│   └── DATABASE.md              ← CANONICAL schema (single `myboss` DB) + demo seed
 ├── devops/
 │   └── DEVOPS.md                ← CANONICAL deploy & stack
 ├── mobile/
@@ -123,6 +123,9 @@ ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 
 # Reset demo data before team testing
 ./scripts/reset-demo-data.sh
+
+# Optional: enable shared MariaDB (all services → database `myboss`)
+# DB_ENABLED=true  MARIADB_DATABASE=myboss  — see docs/database/DATABASE.md
 
 # Per-app local dev
 cd ../myboss-backend && npm install && npm run start:dev

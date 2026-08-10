@@ -85,7 +85,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | node | 20-alpine | Backend service builds |
 | nginx | alpine | Admin portal container |
 | nginx | 1.27-alpine | API gateway (port 8090) |
-| postgres | 16-alpine | Local/dev database (optional compose) |
+| mariadb | 11.4 | Shared database `myboss` (optional `with-mariadb` profile) |
 | redis | 7-alpine | Local/dev cache (optional compose) |
 
 ### External tools (demo)
@@ -129,7 +129,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | **3004** | squad-service | Apigee / internal only |
 | **3005** | survey-service (+ gallery) | Apigee / internal only |
 | **8081** | admin-portal (direct nginx) | Optional; prefer gateway **8090/login** |
-| **5432** | PostgreSQL | Internal only (future persistence) |
+| **3306** | MariaDB | Internal only (when `DB_ENABLED=true`) |
 | **6379** | Redis | Internal only (future cache/sessions) |
 | **5173** | Vite dev server | Local development only |
 
@@ -217,7 +217,7 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 | Account lockout | Not implemented | Define policy — see `docs/OPEN_QUESTIONS.md` |
 | Penetration test | Not run | Schedule before production |
 | Secret management | `.env` files | Vault / GCP Secret Manager / K8s secrets |
-| PostgreSQL / Redis | Compose exists; demo uses in-memory data | Wire persistence for production |
+| MariaDB / Redis | Compose available; demo defaults to in-memory | Set `DB_ENABLED=true` for shared `myboss` DB |
 | Admin token storage | `localStorage` | Consider HttpOnly cookies + CSRF for production |
 | Certificate pinning | Not implemented | Mobile production requirement TBD |
 | Helmet (npm) | Not used | Custom middleware covers core headers; review parity |
@@ -574,7 +574,7 @@ Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and 
 ### Out of scope / open (see OPEN_QUESTIONS.md)
 
 - Production 2FA provider
-- PostgreSQL persistence (wired in compose, not yet used by services)
+- MariaDB persistence (TypeORM wired for auth/user/config/squad; enable with `DB_ENABLED=true`)
 - Apigee production cutover
 - Power BI reporting
 - Push notifications — **in-app demo done**; production OS push via FCM/APNs (see [`NOTIFICATIONS_PRODUCTION.md`](architecture/NOTIFICATIONS_PRODUCTION.md))
@@ -587,9 +587,9 @@ Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and 
 | Environment | `APP_ENV` | Swagger | 2FA | Database |
 |-------------|-----------|---------|-----|----------|
 | development | development | On | Demo | In-memory / local |
-| demo | demo | On | Demo | In-memory (Docker demo) |
-| uat | uat | Configurable | TBD | TBD |
-| production | production | Off | Production provider | PostgreSQL (planned) |
+| demo | demo | On | Demo | In-memory (default) or MariaDB `myboss` |
+| uat | uat | Configurable | TBD | MariaDB `myboss` |
+| production | production | Off | Production provider | MariaDB `myboss` |
 
 ---
 

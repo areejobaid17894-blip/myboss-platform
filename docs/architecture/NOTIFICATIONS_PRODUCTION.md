@@ -4,7 +4,7 @@
 
 | Layer | Implementation |
 |-------|----------------|
-| Source of truth | `survey-service` — `POST /notifications`, PostgreSQL target |
+| Source of truth | `survey-service` — `POST /notifications`, MariaDB target (`myboss`) |
 | Employee delivery | **In-app only** — Home unread banner + Gallery announcement cards |
 | Admin compose | Admin portal → `POST /notifications` |
 | Employee uploads | `POST /gallery` (`source=employee`) → admin Photos |
@@ -22,7 +22,7 @@ Unified model: [`GALLERY_NOTIFICATIONS.md`](./GALLERY_NOTIFICATIONS.md)
 Admin portal
     POST /notifications
          ↓
-survey-service (PostgreSQL: notifications + gallery_items)
+survey-service (MariaDB `myboss`: notifications + gallery_items)
          ↓
 push-worker (new job / Lambda / sidecar)
          ↓
@@ -68,7 +68,7 @@ FCM and APNs handle millions of messages per day. Bottleneck would be backend/DB
 |------|--------------|
 | FCM / APNs message delivery | **Free** |
 | Push worker compute | Negligible (small container or Lambda) |
-| PostgreSQL (notifications table) | Part of existing DB hosting |
+| MariaDB (notifications table) | Part of shared `myboss` database |
 | Apple Developer Program | ~$99/year (App Store) |
 | Google Play | ~$25 one-time (if public store) |
 
@@ -81,7 +81,7 @@ FCM and APNs handle millions of messages per day. Bottleneck would be backend/DB
 - [ ] `device_tokens` table (user_id, platform, token, updated_at)
 - [ ] Mobile: register token on login (`firebase_messaging` or native)
 - [ ] Push worker: on `POST /notifications`, resolve audience server-side, fan-out to tokens
-- [ ] Persist notifications + gallery_items in PostgreSQL (replace JSON demo files)
+- [ ] Persist notifications + gallery_items in MariaDB (replace JSON demo files)
 - [ ] Retain in-app gallery/inbox as fallback when push is denied or app is foregrounded
 - [ ] Orange sign-off on provider (Firebase vs AWS SNS vs direct FCM/APNs)
 

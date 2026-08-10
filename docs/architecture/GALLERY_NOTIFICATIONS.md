@@ -134,7 +134,7 @@ Query params from mobile session:
 | Push delivery | Gallery + inbox only | FCM/APNs + gallery |
 | Media storage | Base64 / URL string | S3 + CDN |
 | Audience resolution | Query flags from mobile | Server-side user profile join |
-| Persistence | JSON file + memory | PostgreSQL |
+| Persistence | JSON file + memory | MariaDB (`myboss`) |
 
 ## Related docs
 

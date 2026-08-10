@@ -28,7 +28,7 @@ flowchart TB
     end
 
     subgraph Data
-        DB[(MySQL Database)]
+        DB[(MariaDB — myboss)]
     end
 
     subgraph External
@@ -64,7 +64,7 @@ flowchart TB
 | **Mobile app** | Flutter (Android) | Employees |
 | **Admin portal** | React + Vite | Admins |
 | **Backend** | NestJS (5 microservices) | Both apps |
-| **Database** | MySQL | All backend services |
+| **Database** | MariaDB 11 — single shared `myboss` database | All backend services |
 | **Analytics** | CSV/JSON export APIs | Power BI / Admin |
 
 ---
@@ -81,17 +81,18 @@ flowchart TB
 
 ---
 
-## 5. MySQL — what is stored
+## 5. MariaDB — what is stored
+
+All microservices connect to **one database** (`MARIADB_DATABASE=myboss`). No duplicate user or squad snapshot columns — see [`../database/DATABASE.md`](../database/DATABASE.md).
 
 | Domain | Examples |
 |--------|----------|
-| **Auth** | Users, OTP sessions, refresh tokens |
-| **Users** | Employee profiles, roles |
-| **Config** | Max squad size, survey targets, buildings |
+| **Auth & users** | Single `users` table (eligibility + profile), OTP sessions |
+| **Config** | Buildings, app settings, squad limits |
 | **Squads** | Squads, members, join requests |
 | **Surveys** | Survey schemas, responses, gallery, notifications, analytics |
 
-> **Note:** Demo environment may use in-memory data for quick testing. **MySQL is the target database** for persistent, report-ready data.
+> **Note:** Demo defaults to in-memory data (`DB_ENABLED=false`). Enable MariaDB with `DB_ENABLED=true` for persistent, report-ready data.
 
 ---
 
@@ -133,7 +134,7 @@ flowchart LR
 sequenceDiagram
     participant E as Employee App
     participant S as Survey Service
-    participant D as MySQL
+    participant D as MariaDB (myboss)
     participant A as Admin Portal
     participant P as Power BI
 
@@ -165,7 +166,7 @@ flowchart LR
     DEV --> BE[Backend Services]
     DEV --> EMU[Android Emulator]
     DEV --> WEB[Admin Portal Browser]
-    BE --> MYSQL[(MySQL)]
+    BE --> DB[(MariaDB myboss)]
 
     EMU --> BE
     WEB --> BE
@@ -175,7 +176,7 @@ flowchart LR
 
 ## 11. One-line summary
 
-> **Flutter mobile app for employees + React admin portal + NestJS microservices + MySQL**, centered on **squads, dynamic surveys, and Power BI-ready analytics**.
+> **Flutter mobile app for employees + React admin portal + NestJS microservices + MariaDB (`myboss`)**, centered on **squads, dynamic surveys, and Power BI-ready analytics**.
 
 ---
 

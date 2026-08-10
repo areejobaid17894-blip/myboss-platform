@@ -6,7 +6,7 @@
 
 ## Overview
 
-my boss app demo uses **native in-app direct messaging** between squad teammates. Messages are stored in-memory for the event week (suitable for ~1,500 users/day). There is no third-party chat widget in the mobile app UI — the Flutter app renders messages natively and polls the REST API.
+my boss app demo uses **native in-app direct messaging** between squad teammates. Messages are stored **in-memory** when `DB_ENABLED=false`, or in the shared **`chat_messages`** MariaDB table when `DB_ENABLED=true`.
 
 | Capability | Implementation |
 |---|---|
@@ -22,7 +22,7 @@ my boss app demo uses **native in-app direct messaging** between squad teammates
 flowchart LR
   Mobile[Flutter Live Chat] --> Gateway[API Gateway :8090]
   Gateway --> Config[config-service]
-  Config --> Repo[(In-memory messages)]
+  Config --> Repo[(In-memory or chat_messages)]
   Mobile --> Squad[squad-service]
   Squad --> Members[Squad member list]
 ```

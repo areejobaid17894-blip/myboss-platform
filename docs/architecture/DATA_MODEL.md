@@ -8,7 +8,9 @@ This file is a **redirect stub**. All table definitions, relationships, demo see
 
 That guide includes:
 
+- **Single shared database** — all microservices use `MARIADB_DATABASE=myboss`
 - Service ownership per table (auth, user, config, squad, survey)
+- Unified `users` table (auth eligibility + employee profile — no duplicates)
 - Full column definitions including `terms_accepted_at`
 - Entity relationship diagram
 - Demo vs production storage model

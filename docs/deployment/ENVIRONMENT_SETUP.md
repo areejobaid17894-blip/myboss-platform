@@ -113,14 +113,31 @@ Full Android Studio guide: [`../mobile/ANDROID_STUDIO.md`](../mobile/ANDROID_STU
 
 ---
 
-## 6. Optional: PostgreSQL & Redis
+## 6. Optional: MariaDB & Redis
 
 ```bash
 cd myboss-platform/docker
-docker compose up -d
+docker compose up -d mariadb redis
 ```
 
-Demo backend uses in-memory stores; DB schema target: [`../database/DATABASE.md`](../database/DATABASE.md).
+Enable persistence in `.env`:
+
+```env
+DB_ENABLED=true
+MARIADB_HOST=localhost
+MARIADB_PORT=3306
+MARIADB_DATABASE=myboss
+MARIADB_USER=myboss
+MARIADB_PASSWORD=changeme
+```
+
+All microservices share the **`myboss`** database (no database-per-service). Schema reference: [`../database/DATABASE.md`](../database/DATABASE.md).
+
+**Demo + MariaDB:**
+
+```bash
+docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build
+```
 
 ---
 

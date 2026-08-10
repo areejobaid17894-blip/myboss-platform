@@ -37,8 +37,8 @@ Implemented in demo (no longer open): employee OTP auth, squad formation, dynami
 
 ## Backend & Data
 
-- [x] Target schema documented — [`database/DATABASE.md`](database/DATABASE.md)
-- [ ] PostgreSQL migration plan and per-service ownership confirmation
+- [x] Unified MariaDB schema — single `myboss` database for all services — [`database/DATABASE.md`](database/DATABASE.md)
+- [ ] Wire survey-service persistence to MariaDB (auth/user/config/squad TypeORM ready)
 - [ ] Inter-service async pattern (events vs synchronous HTTP)
 - [ ] Data retention / GDPR requirements
 - [ ] Multi-tenancy (if required)

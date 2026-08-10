@@ -68,7 +68,7 @@ App version: **1.0.0+1**
 | node | 20-alpine | Backend service builds |
 | nginx | 1.27-alpine | API gateway (port **8090**) |
 | nginx | alpine | Admin portal container |
-| postgres | 16-alpine | Optional local DB (`docker-compose.yml`) |
+| mariadb | 11.4 | Shared database (`myboss`) — optional via `with-mariadb` profile |
 | redis | 7-alpine | Optional local cache |
 
 ### External tools (demo)
@@ -108,8 +108,8 @@ App version: **1.0.0+1**
 | **8090** | API gateway — mobile `/app/`, admin `/login`, all API proxies | Public (Apigee / Cloudflare) |
 | 3001–3005 | Microservices | Apigee / internal only |
 | 8081 | Admin portal direct (optional) | Internal; prefer **8090/login** |
-| 5432 | PostgreSQL | Internal (future) |
-| 6379 | Redis | Internal (future) |
+| **3306** | MariaDB | Internal (when `DB_ENABLED=true`) |
+| 6379 | Redis | Internal (optional) |
 | 5173 | Vite dev server | Local development only |
 
 ---
@@ -227,7 +227,7 @@ In-memory stores mutate during QA. Restore seed squads, users, and terms state:
 ./scripts/reset-demo-data.sh
 ```
 
-Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad**. See [`../database/DATABASE.md` § Demo data reset](../database/DATABASE.md#demo-data-reset).
+Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad**. See [`../database/DATABASE.md`](../database/DATABASE.md) (demo vs DB-enabled modes).
 
 ---
 
@@ -290,7 +290,8 @@ docker/
 ├── Dockerfile.survey
 ├── Dockerfile.admin-portal
 ├── docker-compose.demo.yml    ← demo backend (primary)
-├── docker-compose.yml         ← postgres + redis only
+├── docker-compose.yml         ← mariadb + redis only
+├── mariadb/init/              ← single `myboss` schema DDL
 ├── nginx-api-gateway.conf
 ├── nginx-admin.conf
 └── README.md

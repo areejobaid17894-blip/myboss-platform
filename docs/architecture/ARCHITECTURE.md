@@ -40,8 +40,8 @@ All client applications communicate with backend microservices through **Google 
 ┌─────────▼─────────────────▼────────────────────▼─────────────┐
 │                     Data Layer                                │
 │  ┌──────────────┐  ┌──────────────┐                          │
-│  │  PostgreSQL  │  │    Redis     │                          │
-│  │  (Primary)   │  │  (Cache/Sess)│                          │
+│  │  MariaDB 11  │  │    Redis     │                          │
+│  │  (myboss DB) │  │  (Cache/Sess)│                          │
 │  └──────────────┘  └──────────────┘                          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -59,7 +59,7 @@ All client applications communicate with backend microservices through **Google 
 Each service is:
 - Independently deployable
 - Independently testable
-- Owns its database schema (shared PostgreSQL instance, separate schemas)
+- Owns its tables logically, but all services share **one MariaDB database** (`myboss`) with real foreign keys — see [`../database/DATABASE.md`](../database/DATABASE.md)
 
 ### 3.2 Internal Architecture (per service)
 
@@ -182,7 +182,7 @@ src/
 | Admin action | Backend |
 |--------------|---------|
 | List squads with members | `GET /squads/admin/all` |
-| Assign employee | `POST /squads/admin/assign` → syncs `user.squad_id` |
+| Assign employee | `POST /squads/admin/assign` → writes `squad_members` (same shared DB) |
 | Save destination | `PUT /squads/:id/destination` |
 | Users / surveys / gallery / notifications | user-service, survey-service |
 

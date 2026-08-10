@@ -81,7 +81,7 @@
        └──────────┴──────────┴────┬─────┴──────────┘
                                   ▼
                     ┌─────────────────────────┐
-                    │    MySQL Database       │
+                    │  MariaDB — myboss (shared) │
                     └─────────────────────────┘
 
                     Survey Service ──► Power BI (CSV / JSON export)</div>
@@ -92,7 +92,7 @@
   <tr><td>Mobile app</td><td>Flutter (Android)</td><td>Employees</td></tr>
   <tr><td>Admin portal</td><td>React + Vite</td><td>Admins</td></tr>
   <tr><td>Backend</td><td>NestJS (5 microservices)</td><td>Both apps</td></tr>
-  <tr><td>Database</td><td>MySQL</td><td>All backend services</td></tr>
+  <tr><td>Database</td><td>MariaDB 11 — single <code>myboss</code> database</td><td>All backend services</td></tr>
   <tr><td>Analytics</td><td>CSV/JSON export APIs</td><td>Power BI / Admin</td></tr>
 </table>
 
@@ -106,16 +106,15 @@
   <tr><td>Survey</td><td>Surveys, responses, gallery, reports, Power BI export</td></tr>
 </table>
 
-<h2>5. MySQL — what is stored</h2>
+<h2>5. MariaDB — what is stored</h2>
 <table>
   <tr><th>Domain</th><th>Examples</th></tr>
-  <tr><td>Auth</td><td>Users, OTP sessions, refresh tokens</td></tr>
-  <tr><td>Users</td><td>Employee profiles, roles</td></tr>
-  <tr><td>Config</td><td>Max squad size, survey targets, buildings</td></tr>
+  <tr><td>Auth &amp; users</td><td>Single <code>users</code> table, OTP sessions</td></tr>
+  <tr><td>Config</td><td>Buildings, app settings, squad limits</td></tr>
   <tr><td>Squads</td><td>Squads, members, join requests</td></tr>
   <tr><td>Surveys</td><td>Survey schemas, responses, gallery, analytics</td></tr>
 </table>
-<div class="note"><strong>Note:</strong> Demo environment may use in-memory data for quick testing. <strong>MySQL is the target database</strong> for persistent, report-ready data.</div>
+<div class="note"><strong>Note:</strong> Demo defaults to in-memory data (<code>DB_ENABLED=false</code>). Enable MariaDB with <code>DB_ENABLED=true</code> and <code>MARIADB_DATABASE=myboss</code>.</div>
 
 <div class="page-break"></div>
 
@@ -134,7 +133,7 @@
 <p><strong>Main pages:</strong> Dashboard, Users, Configuration, Surveys, Analytics</p>
 
 <h2>8. Survey data flow</h2>
-<div class="diagram">Employee App ──submit──► Survey Service ──save──► MySQL
+<div class="diagram">Employee App ──submit──► Survey Service ──save──► MariaDB (myboss)
                               ▲                        │
                               │                        │
 Admin Portal ◄──reports───────┘                        │
@@ -151,12 +150,12 @@ Admin Portal ◄──reports───────┘                        │
 
 <h2>10. Deployment view (development)</h2>
 <div class="diagram">Developer Machine
-    ├── Backend Services ──► MySQL
+    ├── Backend Services ──► MariaDB (myboss)
     ├── Android Emulator ──► Backend Services
     └── Admin Portal (Browser) ──► Backend Services</div>
 
 <h2>11. One-line summary</h2>
-<div class="summary">Flutter mobile app for employees + React admin portal + NestJS microservices + MySQL, centered on squads, dynamic surveys, and Power BI-ready analytics.</div>
+<div class="summary">Flutter mobile app for employees + React admin portal + NestJS microservices + MariaDB (<code>myboss</code>), centered on squads, dynamic surveys, and Power BI-ready analytics.</div>
 
 <div class="footer">my boss app — High-Level Design · Orange · Confidential</div>
 

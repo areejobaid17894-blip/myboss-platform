@@ -115,6 +115,16 @@ INTERNAL_SERVICE_TOKEN=$(openssl rand -base64 32)
 DEMO_ADMIN_PASSWORD=admin123
 ```
 
+**Optional — persistent database:** Demo defaults to in-memory (`DB_ENABLED=false`). To use MariaDB with a **single shared database** for all microservices:
+
+```bash
+DB_ENABLED=true
+MARIADB_DATABASE=myboss
+```
+
+Start with MariaDB profile: `docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build`  
+Schema details: [docs/database/DATABASE.md](database/DATABASE.md)
+
 **4. Start the stack**
 
 ```bash

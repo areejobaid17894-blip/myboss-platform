@@ -184,7 +184,7 @@ curl -sI http://127.0.0.1:8090/health | grep -i x-frame
 | Account lockout | Not implemented | Define policy — see [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) |
 | Penetration test | Not run | Schedule before go-live |
 | Secret management | `.env` files | Vault / GCP Secret Manager / K8s secrets |
-| PostgreSQL persistence | In-memory demo data | Wire DB; encrypt at rest |
+| MariaDB persistence | In-memory demo by default | Set `DB_ENABLED=true`; single `myboss` DB; encrypt at rest |
 | Admin token storage | `localStorage` | Consider HttpOnly cookies + CSRF |
 | Certificate pinning | Not implemented | Mobile production requirement TBD |
 | Internal sync routes | Service token | IP allowlist on Apigee; rotate token |
@@ -218,7 +218,7 @@ These are **acceptable for demo** but must be addressed for production:
 2. Demo OTP visible in API/logs when `TWO_FA_DEMO_ENABLED=true`
 3. Web mobile stores tokens in localStorage (demo LAN/tunnel only)
 4. No application-level rate limiting (delegated to Apigee)
-5. Chat messages stored in-memory (config-service)
+5. Chat messages: in-memory when `DB_ENABLED=false`; persisted in `chat_messages` when DB enabled
 
 ---
 

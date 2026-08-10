@@ -9,7 +9,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootchangeme}
       MARIADB_USER: ${MARIADB_USER:-myboss}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:-changeme}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-myboss_auth}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-myboss}
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./mariadb/init:/docker-entrypoint-initdb.d:ro
