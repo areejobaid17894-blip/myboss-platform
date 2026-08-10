@@ -57,6 +57,20 @@ services:
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@orange.com}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123}
       TWO_FA_DEMO_ENABLED: ${TWO_FA_DEMO_ENABLED:-true}
+      OTP_PROVIDER: ${OTP_PROVIDER:-demo}
+      ORANGE_OTP_ENABLED: ${ORANGE_OTP_ENABLED:-false}
+      ORANGE_SSO_TOKEN_URL: ${ORANGE_SSO_TOKEN_URL:-http://host.docker.internal:19001/sso/openid-connect/v1/token}
+      ORANGE_SSO_CLIENT_ID: ${ORANGE_SSO_CLIENT_ID:-}
+      ORANGE_SSO_CLIENT_SECRET: ${ORANGE_SSO_CLIENT_SECRET:-}
+      ORANGE_EMAIL_API_URL: ${ORANGE_EMAIL_API_URL:-http://host.docker.internal:19002/email/send}
+      ORANGE_EMAIL_CLIENT_NAME: ${ORANGE_EMAIL_CLIENT_NAME:-sajelni}
+      ORANGE_EMAIL_CHANNEL: ${ORANGE_EMAIL_CHANNEL:-survey_app}
+      ORANGE_EMAIL_TYPE: ${ORANGE_EMAIL_TYPE:-blank}
+      ORANGE_EMAIL_API_KEY: ${ORANGE_EMAIL_API_KEY:-}
+      ORANGE_SSO_API_KEY: ${ORANGE_SSO_API_KEY:-}
+      ORANGE_OTP_FALLBACK_DEMO: ${ORANGE_OTP_FALLBACK_DEMO:-false}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       mariadb:
         condition: service_healthy
