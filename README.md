@@ -67,7 +67,9 @@ DEMO_ADMIN_PASSWORD=admin123
 
 Optional: `DEMO_HOST`, `TAWK_PROPERTY_ID`.
 
-**New machine?** Follow [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md#new-machine-checklist).
+**New machine?** Follow [`docs/NEW_DEVICE_SETUP.md`](docs/NEW_DEVICE_SETUP.md) (install, `.env`, emulator, physical device).  
+Environment variables & GitLab CI/CD: [`docs/deployment/ENV_AND_GITLAB_VARIABLES.md`](docs/deployment/ENV_AND_GITLAB_VARIABLES.md).  
+Legacy checklist: [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md#new-machine-checklist).
 
 ---
 

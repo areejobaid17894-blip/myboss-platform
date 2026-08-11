@@ -2,6 +2,8 @@
 
 Local development setup for all applications in the **multi-repo** layout. For production/demo deployment, use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
 
+**Canonical guides:** [`../NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md) (new laptop / phone) · [`ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md) (all variables + GitLab CI/CD)
+
 ---
 
 ## Repository layout

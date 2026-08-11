@@ -2,6 +2,9 @@
 
 Four projects that work together as a single product. Keep them as **sibling folders** on your machine — platform scripts expect to find the others next door.
 
+> **New machine or new phone?** Start with [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) — step-by-step install, `.env`, and physical device APK.  
+> **All env variables + GitLab CI/CD:** [`deployment/ENV_AND_GITLAB_VARIABLES.md`](deployment/ENV_AND_GITLAB_VARIABLES.md)
+
 ```
 myboss-repos/
 ├── myboss-mobile/      Flutter employee app

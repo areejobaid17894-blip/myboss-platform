@@ -8,6 +8,7 @@ Central index for all project documentation.
 
 | Role | Primary guide | Also read |
 |------|---------------|-----------|
+| **New laptop or new phone** | [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) | [`deployment/ENV_AND_GITLAB_VARIABLES.md`](deployment/ENV_AND_GITLAB_VARIABLES.md) |
 | **All teams (handoff)** | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) | Root [`README.md`](../README.md) |
 | **DevOps / Infrastructure** | [`devops/DEVOPS.md`](devops/DEVOPS.md) | [`deployment/DEPLOYMENT.md`](deployment/DEPLOYMENT.md) |
 | **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) — **single shared MariaDB `myboss`** | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
@@ -61,6 +62,7 @@ Read: [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md)
 ```
 docs/
 ├── README.md                    ← You are here
+├── NEW_DEVICE_SETUP.md          ← New laptop + physical device (start here)
 ├── TEAM_REVIEW_GUIDE.md         ← Cross-team handoff
 ├── EMPLOYEE_JOURNEY_COVERAGE.md ← Mobile feature matrix
 ├── ADMIN_JOURNEY_COVERAGE.md    ← Admin feature matrix
@@ -93,6 +95,7 @@ docs/
 │   ├── DEPLOYMENT.md            ← Environment matrix
 │   ├── DEMO_TUNNEL_AND_APK.md   ← Tunnel, Error 1033, external APK
 │   ├── ENVIRONMENT_SETUP.md     ← Local dev (all apps)
+│   ├── ENV_AND_GITLAB_VARIABLES.md ← All .env keys + GitLab CI/CD mapping
 │   ├── IOS-URGENT-BUILD.md      ← iOS without local Xcode (supplementary)
 │   └── pdf/                     ← Printable guides for Apigee & QA
 │
