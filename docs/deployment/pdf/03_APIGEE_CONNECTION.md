@@ -37,6 +37,7 @@ https://api-demo.orange.com
 | `/config/api/v1/**` | `http://<VM_IP>:3003/api/v1/**` | GET, POST, PUT, DELETE, OPTIONS |
 | `/squad/api/v1/**` | `http://<VM_IP>:3004/api/v1/**` | GET, POST, PUT, DELETE, OPTIONS |
 | `/survey/api/v1/**` | `http://<VM_IP>:3005/api/v1/**` | GET, POST, PUT, DELETE, OPTIONS |
+| `/notification/api/v1/**` | `http://<VM_IP>:3006/api/v1/**` | GET, POST, PUT, DELETE, OPTIONS |
 
 Example URLs:
 
@@ -109,20 +110,49 @@ https://api-demo.orange.com/config/api/v1/docs   ← Chat tag
 
 ## 8. Client configuration after Apigee is live
 
+Canonical client URL reference: [`../APIGEE_CLIENT_URLS.md`](../APIGEE_CLIENT_URLS.md)
+
 ### Admin portal
+
+**Recommended** — single gateway origin (`.env.apigee`):
+
+```env
+VITE_API_GATEWAY_ORIGIN=https://api-demo.orange.com
+VITE_APP_ENV=demo
+```
+
+```bash
+cd myboss-admin
+npm run build:apigee
+```
+
+Or explicit per-service URLs:
 
 ```env
 VITE_AUTH_API_URL=https://api-demo.orange.com/auth/api/v1
 VITE_USER_API_URL=https://api-demo.orange.com/user/api/v1
 VITE_CONFIG_API_URL=https://api-demo.orange.com/config/api/v1
+VITE_SQUAD_API_URL=https://api-demo.orange.com/squad/api/v1
 VITE_SURVEY_API_URL=https://api-demo.orange.com/survey/api/v1
+VITE_APP_ENV=demo
 ```
 
 ### Mobile app
 
 ```bash
-fvm flutter build web --dart-define=DEMO_MODE=true --base-href=/app/
-# or use: myboss-mobile/build-demo-web.sh
+cd myboss-mobile
+./build-apigee-android.sh
+
+# Or run on device:
+fvm flutter run \
+  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
+  --dart-define=ENV=demo
+```
+
+Mobile web (hosted separately — API calls still go to Apigee):
+
+```bash
+fvm flutter build web --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com --base-href=/app/
 ```
 
 ---
@@ -142,7 +172,7 @@ curl -X POST https://api-demo.orange.com/auth/api/v1/auth/sign-in \
 
 ## 10. Checklist
 
-- [ ] 5 API proxies (auth, user, config, squad, survey)
+- [ ] 6 API proxies (auth, user, config, squad, survey, notification)
 - [ ] JWT verify on protected routes (including chat messages)
 - [ ] Orange error format preserved end-to-end
 - [ ] Swagger reachable for QA (optional)

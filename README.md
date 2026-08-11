@@ -1,8 +1,8 @@
 # myboss-platform
 
-Orchestration layer for **my boss app** — Docker Compose, nginx demo gateway, deploy scripts, and project documentation.
+Orchestration layer for **my boss app** — Docker Compose, deploy scripts, and project documentation.
 
-This project does not contain application source. The Flutter mobile app, React admin, and NestJS backend live as sibling folders next to this one. Platform scripts know how to find them and wire everything together on port **8090**.
+**Client apps (mobile + admin) use Orange Apigee** for REST APIs. nginx `:8090` in this repo is **local development only** — see [`docs/deployment/APIGEE_CLIENT_URLS.md`](docs/deployment/APIGEE_CLIENT_URLS.md).
 
 ---
 

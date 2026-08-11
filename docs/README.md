@@ -8,14 +8,14 @@ Central index for all project documentation.
 
 | Role | Primary guide | Also read |
 |------|---------------|-----------|
-| **New laptop or new phone** | [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) | [`deployment/ENV_AND_GITLAB_VARIABLES.md`](deployment/ENV_AND_GITLAB_VARIABLES.md) |
+| **New laptop or new phone** | [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) | [`deployment/APIGEE_CLIENT_URLS.md`](deployment/APIGEE_CLIENT_URLS.md) |
 | **All teams (handoff)** | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) | Root [`README.md`](../README.md) |
 | **DevOps / Infrastructure** | [`devops/DEVOPS.md`](devops/DEVOPS.md) | [`deployment/DEPLOYMENT.md`](deployment/DEPLOYMENT.md) |
 | **Backend / Database** | [`database/DATABASE.md`](database/DATABASE.md) — **single shared MariaDB `myboss`** | [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
 | **Mobile** | [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | [`PUSH_FIREBASE_SETUP.md`](PUSH_FIREBASE_SETUP.md), [`EMPLOYEE_JOURNEY_COVERAGE.md`](EMPLOYEE_JOURNEY_COVERAGE.md) |
 | **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | [myboss-admin README](https://github.com/areejobaid17894-blip/myboss-admin/blob/main/README.md) |
 | **Security** | [`security/SECURITY.md`](security/SECURITY.md) | [`architecture/GOVERNANCE.md`](architecture/GOVERNANCE.md) |
-| **Apigee / API Platform** | [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md) | [`deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) |
+| **Apigee / API Platform** | [`architecture/APIGEE_VS_NGINX.md`](architecture/APIGEE_VS_NGINX.md) | [`deployment/APIGEE_CLIENT_URLS.md`](deployment/APIGEE_CLIENT_URLS.md) |
 | **External demo / APK** | [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md) | Error 1033, Cloudflare tunnel |
 | **Push notifications** | [`PUSH_FIREBASE_SETUP.md`](PUSH_FIREBASE_SETUP.md) | Firebase, FCM, device tokens |
 | **QA / Testing** | [`deployment/pdf/04_TESTING_GUIDE.md`](deployment/pdf/04_TESTING_GUIDE.md) | [`TEAM_REVIEW_GUIDE.md`](TEAM_REVIEW_GUIDE.md) |

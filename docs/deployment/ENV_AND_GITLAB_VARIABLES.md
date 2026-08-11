@@ -183,13 +183,14 @@ Setup guide: [`../PUSH_FIREBASE_SETUP.md`](../PUSH_FIREBASE_SETUP.md)
 
 Vite exposes only variables prefixed with `VITE_`.
 
-| Variable | Description | Local dev | Docker / gateway build |
-|----------|-------------|-----------|------------------------|
-| `VITE_AUTH_API_URL` | Auth API base | `http://localhost:3001/api/v1` | `/auth/api/v1` |
-| `VITE_USER_API_URL` | User API base | `http://localhost:3002/api/v1` | `/user/api/v1` |
-| `VITE_CONFIG_API_URL` | Config API base | `http://localhost:3003/api/v1` | `/config/api/v1` |
-| `VITE_SQUAD_API_URL` | Squad API base | `http://localhost:3004/api/v1` | `/squad/api/v1` |
-| `VITE_SURVEY_API_URL` | Survey API base | `http://localhost:3005/api/v1` | `/survey/api/v1` |
+| Variable | Description | Local dev (`npm run dev`) | Apigee build (`npm run build:apigee`) |
+|----------|-------------|---------------------------|---------------------------------------|
+| `VITE_API_GATEWAY_ORIGIN` | Single Apigee base (**recommended**) | — | `https://api-demo.orange.com` |
+| `VITE_AUTH_API_URL` | Auth API base | `http://localhost:3001/api/v1` | *(derived from gateway)* |
+| `VITE_USER_API_URL` | User API base | `http://localhost:3002/api/v1` | *(derived from gateway)* |
+| `VITE_CONFIG_API_URL` | Config API base | `http://localhost:3003/api/v1` | *(derived from gateway)* |
+| `VITE_SQUAD_API_URL` | Squad API base | `http://localhost:3004/api/v1` | *(derived from gateway)* |
+| `VITE_SURVEY_API_URL` | Survey API base | `http://localhost:3005/api/v1` | *(derived from gateway)* |
 | `VITE_APP_ENV` | UI environment label | `development` | `demo` |
 
 **GitLab (admin build job):** set the same `VITE_*` variables for each environment (demo vs production Apigee base URL). They are baked in at **build time**, not runtime.
@@ -205,7 +206,8 @@ The Flutter app does not use a committed `.env`. Pass flags when running or buil
 | Dart define | Purpose | Typical demo value |
 |-------------|---------|-------------------|
 | `DEMO_MODE` | Auto-fill OTP, demo behaviour | `true` |
-| `GATEWAY_ORIGIN` | Primary API gateway URL | `http://192.168.1.9:8090` or tunnel HTTPS URL |
+| `GATEWAY_ORIGIN` | Primary API gateway URL | `https://api-demo.orange.com` |
+| `APIGEE_API_BASE_URL` | Shell env for build scripts | `https://api-demo.orange.com` |
 | `API_HOST` | Single host fallback | Mac LAN IP |
 | `API_HOSTS` | Comma-separated hosts to probe | `tunnel-host,192.168.1.9` |
 | `PUSH_ENABLED` | Register FCM device tokens | `true` (APK scripts set this) |
@@ -214,11 +216,11 @@ The Flutter app does not use a committed `.env`. Pass flags when running or buil
 Examples:
 
 ```bash
-# Emulator
-fvm flutter run --dart-define=DEMO_MODE=true --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090
+# Apigee demo (recommended)
+fvm flutter run --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com --dart-define=ENV=demo
 
-# Physical device (same Wi‑Fi)
-fvm flutter run --dart-define=DEMO_MODE=true --dart-define=GATEWAY_ORIGIN=http://192.168.1.9:8090
+# Local emulator (legacy nginx)
+fvm flutter run --dart-define=DEMO_MODE=true --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090
 ```
 
 **GitLab (mobile build job):** pass the same values to `flutter build apk`:
