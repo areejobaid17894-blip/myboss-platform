@@ -5,6 +5,7 @@
 | Document | Audience | Description |
 |----------|----------|-------------|
 | **[INSTALL.md](INSTALL.md)** | Everyone | **Start here** — tools, clone, deploy, local URLs, logins |
+| **[ERROR_FLOWS.md](ERROR_FLOWS.md)** | QA / Dev / Product | All user flows, error steps, and messages |
 | **[devops/DEVOPS.md](devops/DEVOPS.md)** | DevOps | VM setup, versions, firewall, CI/CD, verification |
 | **[deployment/TESTING.md](deployment/TESTING.md)** | QA | Smoke tests after deploy |
 
