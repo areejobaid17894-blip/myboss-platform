@@ -1,8 +1,6 @@
 # my boss app — Environment Setup Guide
 
-Local development for all applications. For VM/production deploy use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
-
-**Start here on a new machine:** [`../NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)  
+**Start here:** [`../INSTALL.md`](../INSTALL.md)  
 **All variables + GitLab:** [`ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md)
 
 ---

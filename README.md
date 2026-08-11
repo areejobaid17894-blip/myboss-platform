@@ -2,13 +2,17 @@
 
 Docker Compose, deploy scripts, and documentation for **my boss app**.
 
-Clients call **microservices directly** on ports **3001–3006**. No Apigee.
+---
 
-**URLs:** [`docs/deployment/SERVICE_URLS.md`](docs/deployment/SERVICE_URLS.md) · **Setup:** [`docs/NEW_DEVICE_SETUP.md`](docs/NEW_DEVICE_SETUP.md)
+## Install & run (start here)
+
+**[docs/INSTALL.md](docs/INSTALL.md)** — clone, configure, deploy, open all apps locally.
+
+**DevOps / VM:** [docs/devops/DEVOPS.md](docs/devops/DEVOPS.md)
 
 ---
 
-## Deploy locally
+## Quick start
 
 ```bash
 cp .env.example .env && chmod +x scripts/*.sh
@@ -16,37 +20,30 @@ cp .env.example .env && chmod +x scripts/*.sh
 ./scripts/verify-backend.sh
 ```
 
-| App | URL |
-|-----|-----|
-| Admin | http://127.0.0.1:8081 |
+| App | Local URL |
+|-----|-----------|
+| Admin | http://127.0.0.1:8081/login |
+| Employee web | http://127.0.0.1:8092 |
 | APIs | http://127.0.0.1:3001/api/v1 … :3006 |
 
----
-
-## Deploy on a VM (public / LAN IP)
-
-```bash
-./scripts/install-demo-server.sh /opt/myboss
-cd /opt/myboss/myboss-platform
-cp .env.example .env
-./scripts/deploy-demo-server.sh <SERVER_IP>
-
-# Admin must be built with the same IP clients use in the browser:
-DEMO_HOST=<SERVER_IP> docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
-```
-
-Example deployed URLs if `SERVER_IP=213.139.63.204`:
-
-- Admin: `http://213.139.63.204:8081`
-- Auth: `http://213.139.63.204:3001/api/v1`
-
-Open firewall ports **8081** and **3001–3006**.
+**Login:** Admin `admin@orange.com` / `admin123` · Employee `demo@orange.com`
 
 ---
 
-## Scripts
+## Repos (clone as siblings)
 
-`deploy-demo-server.sh` · `verify-backend.sh` · `verify-mobile-api.sh` · `verify-orange-otp.sh` · `reset-demo-data.sh` · `stop-demo-server.sh`
+| Repo | Purpose |
+|------|---------|
+| [myboss-backend](https://github.com/areejobaid17894-blip/myboss-backend) | NestJS microservices |
+| [myboss-admin](https://github.com/areejobaid17894-blip/myboss-admin) | React admin portal |
+| [myboss-mobile](https://github.com/areejobaid17894-blip/myboss-mobile) | Flutter employee app |
+| **myboss-platform** | Docker + scripts + docs |
+
+---
+
+## Versions
+
+Node **20 LTS** · NestJS **10.4** · React **19** · Vite **6** · Flutter **3.35.7**
 
 ---
 
