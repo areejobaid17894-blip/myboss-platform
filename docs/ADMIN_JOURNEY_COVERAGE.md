@@ -56,7 +56,7 @@ Legacy routes redirect: `/users` → `/unregistered`, `/analytics` → `/statist
 
 | Environment | Admin login | Swagger (Squad) |
 |-------------|-------------|-----------------|
-| Local gateway | http://127.0.0.1:8090/login | http://127.0.0.1:8090/squad/api/v1/docs |
+| Local gateway | http://127.0.0.1:8081/login | http://127.0.0.1:3004/api/v1/docs |
 | Public tunnel | `https://<host>/login` (see `demo-public-url.txt`) | `https://<host>/squad/api/v1/docs` |
 
 Account: `admin@orange.com` / `admin123` + OTP (auto-fill when `DEMO_MODE=true`).

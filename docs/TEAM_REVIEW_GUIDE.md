@@ -1,6 +1,6 @@
 # my boss app — Team Review & Handoff Guide
 
-**Purpose:** Single entry point for DevOps, Security, Apigee, Mobile, Backend, Admin, QA, and Architecture teams to review the platform before go-live.
+**Purpose:** Single entry point for DevOps, Security, Mobile, Backend, Admin, QA, and Architecture teams to review the platform before go-live.
 
 **Repositories:** multi-repo — see [MULTI_REPO_SETUP.md](MULTI_REPO_SETUP.md)  
 **Current phase:** Demo-ready (Orange governance-aligned APIs, JWT + 2FA demo, Swagger, native chat)
@@ -13,11 +13,11 @@
 |------|------------|----------------------|
 | **DevOps / Infrastructure** | [`docs/devops/DEVOPS.md`](devops/DEVOPS.md) | `deploy-demo-server.sh`, `verify-backend.sh` |
 | **Security / Compliance** | [`docs/security/SECURITY.md`](security/SECURITY.md) | JWT, Orange errors, internal token |
-| **Apigee / API Platform** | [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md) | Swagger |
+| **Client URLs** | [`docs/deployment/SERVICE_URLS.md`](deployment/SERVICE_URLS.md) | Direct ports :3001–3006 |
 | **Backend development** | [`../../myboss-backend/README.md`](../../myboss-backend/README.md) | `verify-mobile-api.sh` |
 | **Mobile (Android / iOS)** | [`docs/mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md) | APK build |
-| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | Gateway `/login` |
-| **QA / Testing** | [`docs/deployment/pdf/04_TESTING_GUIDE.md`](deployment/pdf/04_TESTING_GUIDE.md) | Testing guide |
+| **Admin portal** | [`ADMIN_JOURNEY_COVERAGE.md`](ADMIN_JOURNEY_COVERAGE.md) | `:8081` / Vite dev |
+| **QA / Testing** | [`docs/deployment/TESTING.md`](deployment/TESTING.md) | Testing guide |
 | **Database** | [`docs/database/DATABASE.md`](database/DATABASE.md) | Schema review |
 | **Architecture / Product** | [`architecture/HLD.md`](architecture/HLD.md) | HLD, ARCHITECTURE |
 
@@ -120,12 +120,23 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 
 | Port | Service | Exposure |
 |------|---------|----------|
-| **3001–3006** | Microservices | Apigee / internal only |
-| **8081** | admin-portal (static SPA) | Optional direct access |
+| **3001–3006** | Microservices | Direct client access (firewall-restrict in production) |
+| **8081** | admin-portal (static SPA) | Direct access |
 | **3306** | MariaDB | Internal (`DB_ENABLED=true`) |
 | **5173** | Vite dev server | Local development only |
 
-Public API entry: **Orange Apigee** (`https://api-demo.orange.com`).
+Clients call microservices **directly** on `http://<HOST>:3001–3006`. See [`deployment/SERVICE_URLS.md`](deployment/SERVICE_URLS.md).
+
+### Service port mapping
+
+| Service | Port | Example |
+|---------|------|---------|
+| auth-service | 3001 | `POST http://<HOST>:3001/api/v1/auth/sign-in` |
+| user-service | 3002 | `GET http://<HOST>:3002/api/v1/users/{id}` |
+| config-service | 3003 | `GET http://<HOST>:3003/api/v1/chat/messages` |
+| squad-service | 3004 | `GET http://<HOST>:3004/api/v1/squads/stats` |
+| survey-service | 3005 | `GET http://<HOST>:3005/api/v1/surveys/catalog` |
+| notification-service | 3006 | push / health |
 
 ### Docker containers (demo stack)
 
@@ -142,18 +153,6 @@ Public API entry: **Orange Apigee** (`https://api-demo.orange.com`).
 **Compose file:** `docker/docker-compose.demo.yml`  
 **Deploy:** `scripts/deploy-demo-server.sh`
 
-### Apigee path mapping (production target)
-
-| Apigee prefix | Backend | Example |
-|---------------|---------|---------|
-| `/auth/api/v1/**` | auth-service:3001 | `POST /auth/sign-in` |
-| `/user/api/v1/**` | user-service:3002 | `GET /users/{id}` |
-| `/config/api/v1/**` | config-service:3003 | `GET /chat/messages` |
-| `/squad/api/v1/**` | squad-service:3004 | `GET /squads/stats` |
-| `/survey/api/v1/**` | survey-service:3005 | `GET /surveys/catalog` |
-
-Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTION.md)
-
 ---
 
 ## Orange governance coverage
@@ -165,18 +164,17 @@ Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTIO
 | JWT authentication on protected routes | **Implemented** | Global `JwtAuthGuard`; `@Public()` for open routes |
 | RBAC (ADMIN role) | **Implemented** | `RolesGuard` + `@Roles()` |
 | Swagger / OpenAPI per service | **Implemented** | `/api/v1/docs` when `APP_ENV=demo\|development` or `SWAGGER_ENABLED=true` |
-| Apigee-style URL paths | **Implemented** | Clients use `/auth/api/v1`, `/user/api/v1`, … via Apigee |
+| Direct port URLs per service | **Implemented** | Clients use `http://<HOST>:3001–3006/api/v1` |
 | 2FA endpoint naming `verify-2fa` | **Implemented** | `POST /auth/verify-2fa` (not `verify-otp`) |
 | Governance smoke test script | **Implemented** | `scripts/verify-mobile-api.sh` |
 | Chat API under config service | **Implemented** | `docs/api/CHAT_API.md` |
-| Rate limiting | **Apigee responsibility** | Documented spike arrest 100 req/min/IP in Apigee guide |
+| Rate limiting | **Out of scope (demo)** | Add at load balancer / WAF in production |
 | Production 2FA provider | **Demo only** | `TWO_FA_DEMO_ENABLED=true`; static OTP in demo mode |
 
 **Run governance verification:**
 
 ```bash
 ./scripts/verify-mobile-api.sh 127.0.0.1
-./scripts/verify-mobile-api.sh --apigee
 ./scripts/verify-localhost.sh
 ```
 
@@ -206,9 +204,9 @@ Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTIO
 
 | Item | Current state | Recommended action |
 |------|---------------|-------------------|
-| Rate limiting | Not in application code | Configure Apigee spike arrest + OAuth policies |
-| WAF / DDoS | Not in repo | Cloudflare / Apigee / cloud provider |
-| TLS termination | Demo uses HTTP locally | TLS at Apigee or load balancer in production |
+| Rate limiting | Not in application code | Add at load balancer / WAF in production |
+| WAF / DDoS | Not in repo | Cloud / provider responsibility |
+| TLS termination | Demo uses HTTP locally | TLS at load balancer in production |
 | Account lockout | Not implemented | Define policy — see `docs/OPEN_QUESTIONS.md` |
 | Penetration test | Not run | Schedule before production |
 | Secret management | `.env` files | Vault / GCP Secret Manager / K8s secrets |
@@ -237,7 +235,7 @@ Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTIO
 1. Ubuntu 22.04 VM (specs above)
 2. Docker 24+ and Compose v2
 3. `.env` from `.env.example` with strong `JWT_SECRET`
-4. Firewall: restrict **3001–3006** to Apigee IP range; optional **8081** for admin SPA
+4. Firewall: open **8081** + **3001–3006** to clients that need access (restrict IP range in production)
 
 ### Documents
 
@@ -245,7 +243,7 @@ Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTIO
 |----------|------|
 | **DevOps guide (primary)** | `docs/devops/DEVOPS.md` |
 | New device setup | `docs/NEW_DEVICE_SETUP.md` |
-| Apigee wiring | `docs/deployment/APIGEE_CONNECTION.md` |
+| Client URLs | `docs/deployment/SERVICE_URLS.md` |
 | QA testing | `docs/deployment/TESTING.md` |
 | Deployment overview | `docs/deployment/DEPLOYMENT.md` |
 | Environment setup | `docs/deployment/ENVIRONMENT_SETUP.md` |
@@ -259,7 +257,7 @@ cp .env.example .env          # set JWT_SECRET, DEMO_HOST
 ./scripts/deploy-demo-server.sh <SERVER_IP>
 ./scripts/verify-backend.sh
 ./scripts/verify-mobile-api.sh 127.0.0.1
-./scripts/verify-mobile-api.sh --apigee
+./scripts/verify-mobile-api.sh <SERVER_IP>
 ```
 
 ### CI/CD workflows (GitHub Actions)
@@ -277,9 +275,8 @@ cp .env.example .env          # set JWT_SECRET, DEMO_HOST
 
 - [ ] Docker images build from `docker/Dockerfile.*`
 - [ ] Backend ports **3001–3006** healthy
-- [ ] Apigee proxies wired to VM
 - [ ] `verify-backend.sh` passes
-- [ ] `verify-mobile-api.sh --apigee` passes
+- [ ] `verify-mobile-api.sh <SERVER_IP>` passes
 - [ ] Firewall rules documented and applied
 - [ ] Secrets not committed; `JWT_SECRET` rotated for demo
 
@@ -325,31 +322,29 @@ curl -s http://127.0.0.1:3004/api/v1/squads/stats | jq .
 | Governance | `docs/architecture/GOVERNANCE.md` |
 | API overview (auth, errors) | `docs/api/API_OVERVIEW.md` |
 | Open security questions | `docs/OPEN_QUESTIONS.md` § Security & Compliance |
-| Apigee policies (rate limit, JWT) | `docs/deployment/pdf/03_APIGEE_CONNECTION.md` |
+| Client URLs | `docs/deployment/SERVICE_URLS.md` |
 
 ---
 
-## Apigee / API Platform team
+## API / client integration
 
 ### What you need
 
-1. Demo VM IP or public tunnel base URL
-2. Swagger URLs for all five services
+1. Demo VM or LAN IP (`DEMO_HOST`)
+2. Swagger URLs on `:3001–3006`
 3. Public vs protected route list
 
 ### Documents
 
 | Document | Path |
 |----------|------|
-| Apigee connection guide | `docs/deployment/pdf/03_APIGEE_CONNECTION.md` |
-| Chat + Apigee | `docs/architecture/APIGEE_CHAT.md` |
+| Service URLs | `docs/deployment/SERVICE_URLS.md` |
 | Chat REST API | `docs/api/CHAT_API.md` |
 | API overview | `docs/api/API_OVERVIEW.md` |
 
 ### Public routes (no JWT)
 
 - `POST /auth/api/v1/auth/sign-in`
-- `POST /auth/api/v1/auth/sign-up`
 - `POST /auth/api/v1/auth/verify-2fa`
 - `POST /auth/api/v1/auth/refresh`
 - `GET /config/api/v1/config/buildings`
@@ -357,15 +352,13 @@ curl -s http://127.0.0.1:3004/api/v1/squads/stats | jq .
 - `GET /*/api/v1/health`
 - `GET /*/api/v1/docs` (non-production)
 
-### Apigee checklist
+### Client checklist
 
-- [ ] Five proxies: auth, user, config, squad, survey
-- [ ] Base path `/service/api/v1` matches backend
-- [ ] Spike arrest policy (recommended 100 req/min/IP)
-- [ ] JWT verify policy on protected routes
-- [ ] CORS for admin + mobile web origins
-- [ ] TLS termination at edge
-- [ ] Chat routes on config proxy (no separate chat proxy)
+- [ ] Firewall opens **8081** + **3001–3006** to intended clients
+- [ ] Admin built with `DEMO_HOST=<SERVER_IP>`
+- [ ] Mobile/web use `API_HOST=<SERVER_IP>`
+- [ ] CORS allows admin `:8081` and employee web `:8092` origins
+- [ ] TLS at load balancer if exposing publicly
 
 ---
 
@@ -412,7 +405,7 @@ npm run lint
 
 - Flutter **3.35.7** / Dart **3.9.2** (FVM)
 - Android Studio (emulator) or physical device
-- Demo gateway on **8090**
+- Direct microservice ports **3001–3005** (set `API_HOST` for remote server)
 
 ### Documents
 
@@ -427,15 +420,15 @@ npm run lint
 ```bash
 cd myboss-mobile
 fvm flutter pub get && fvm flutter gen-l10n
-fvm flutter run --dart-define=DEMO_MODE=true
-./build-local-android.sh          # release APK
+fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
+./build-local-android.sh          # release APK (auto LAN IP)
+SERVER_HOST=<IP> ./build-external-android.sh
 ./build-demo-ios.sh --ipa         # iOS (Xcode required)
 ```
 
 ### Mobile checklist
 
-- [ ] `DEMO_MODE=true` probes gateway at startup
-- [ ] Sign-in + 2FA flow works via gateway
+- [ ] Sign-in + 2FA flow works against direct ports
 - [ ] Demo UI hidden in non-demo release builds
 - [ ] Native: tokens in `flutter_secure_storage`
 - [ ] EN + AR localization (`l10n/`)
@@ -447,7 +440,7 @@ fvm flutter run --dart-define=DEMO_MODE=true
 ### What you need
 
 - Node.js 20
-- Gateway URL for API calls (demo: same origin via **8090/login**)
+- Direct API URLs on ports **3001–3005** (Vite dev) or baked via `DEMO_HOST` (Docker)
 - Design reference: **the Boss — Admin Console V2** (black sidebar, 11 sections)
 
 ### Documents
@@ -461,13 +454,11 @@ fvm flutter run --dart-define=DEMO_MODE=true
 
 ### Demo URLs
 
-| Flow | Local | Public tunnel |
-|------|-------|---------------|
-| Admin login | http://127.0.0.1:8090/login | `https://<tunnel>/login` |
-| Employee web | http://127.0.0.1:8090/app/ | `https://<tunnel>/app/` |
-| Swagger (all services) | http://127.0.0.1:8090/{auth,user,config,squad,survey}/api/v1/docs | Same paths on tunnel host |
-
-Current tunnel URL: **`demo-public-url.txt`** at repo root.
+| Flow | Local |
+|------|-------|
+| Admin (Docker) | http://127.0.0.1:8081 |
+| Admin (Vite dev) | http://127.0.0.1:5173 |
+| Auth Swagger | http://127.0.0.1:3001/api/v1/docs |
 
 ### Commands
 
@@ -481,12 +472,12 @@ npm test
 
 ### Admin checklist
 
-- [ ] Login via gateway `/login` (prefer **8090**, not raw :8081)
+- [ ] Login works on `:8081` (Docker) or `:5173` (Vite dev)
 - [ ] V2 nav visible: Overview, Statistics, Squads, Destinations, …
 - [ ] Overview loads KPIs without crash (uses `/squads/admin/all`)
 - [ ] Assign unregistered persists via API
 - [ ] Destinations save via `PUT /squads/:id/destination`
-- [ ] API calls use gateway paths (`/auth`, `/user`, `/squad`, …)
+- [ ] API calls use direct port URLs (`:3001–3005`)
 - [ ] Demo credentials rotated on shared servers
 
 ---
@@ -557,7 +548,7 @@ Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and 
 
 ### Scope delivered (demo phase)
 
-- 5 NestJS microservices + API gateway pattern
+- 5 NestJS microservices on direct ports **3001–3006**
 - Flutter employee app (Android, iOS, web)
 - React admin portal
 - JWT + demo 2FA
@@ -570,7 +561,7 @@ Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and 
 
 - Production 2FA provider
 - MariaDB persistence (TypeORM wired for auth/user/config/squad; enable with `DB_ENABLED=true`)
-- Apigee production cutover
+- TLS / load balancer for public exposure
 - Power BI reporting
 - Push notifications — **in-app demo done**; production OS push via FCM/APNs (see [`NOTIFICATIONS_PRODUCTION.md`](architecture/NOTIFICATIONS_PRODUCTION.md))
 - App store release pipeline
@@ -592,9 +583,9 @@ Run `./scripts/reset-demo-data.sh` before each test cycle to restore squads and 
 
 | Role | Responsibility | Contact |
 |------|----------------|---------|
-| **DevOps lead** | VM, Docker, gateway, tunnel, CI/CD | _[fill in]_ |
+| **DevOps lead** | VM, Docker, ports, CI/CD | _[fill in]_ |
 | **Security lead** | JWT, pen test, compliance sign-off | _[fill in]_ |
-| **Apigee lead** | Proxies, policies, production URLs | _[fill in]_ |
+| **Platform lead** | Client URLs, firewall, production exposure | _[fill in]_ |
 | **Backend lead** | Microservices, Orange errors, APIs | _[fill in]_ |
 | **Mobile lead** | Flutter Android/iOS/web builds | _[fill in]_ |
 | **Admin lead** | React admin portal | _[fill in]_ |

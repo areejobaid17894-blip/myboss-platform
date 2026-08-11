@@ -20,7 +20,7 @@ fi
 echo "==> Backend: $MYBOSS_BACKEND_DIR"
 echo "==> Admin:   $MYBOSS_ADMIN_DIR"
 echo "==> DEMO_HOST: $DEMO_HOST"
-echo "==> API gateway: Orange Apigee (no local nginx)"
+echo "==> APIs: direct service ports :3001–3006 (no Apigee)"
 
 docker compose -f docker/docker-compose.demo.yml up -d --build
 docker compose -f docker/docker-compose.demo.yml up -d --force-recreate auth-service
@@ -33,6 +33,6 @@ sleep 15
 echo ""
 echo "Demo ready (no nginx):"
 echo "  Backend ports :3001–3006"
-echo "  Admin UI      http://127.0.0.1:8081  (calls Apigee — see myboss-admin/.env.apigee)"
-echo "  Mobile dev    cd ../myboss-mobile && fvm flutter run --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com"
-echo "  Apigee APIs   https://api-demo.orange.com/auth/api/v1/..."
+echo "  Admin UI      http://127.0.0.1:8081  (direct ports — DEMO_HOST=${DEMO_HOST})"
+echo "  Admin dev     cd ../myboss-admin && npm run dev  → http://127.0.0.1:5173"
+echo "  Mobile dev    cd ../myboss-mobile && fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true"

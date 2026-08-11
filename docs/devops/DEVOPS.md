@@ -1,9 +1,9 @@
 # DevOps & Infrastructure Guide
 
 **Audience:** DevOps, SRE, platform engineers  
-**Purpose:** Pinned versions, installation, deployment, verification, and Apigee wiring
+**Purpose:** Pinned versions, installation, deployment, verification, and direct-port client wiring
 
-**Related:** [`deployment/APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md) · [`deployment/ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md) · [`NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)
+**Related:** [`deployment/SERVICE_URLS.md`](../deployment/SERVICE_URLS.md) · [`deployment/ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md) · [`NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)
 
 ---
 
@@ -21,20 +21,20 @@
 
 ### Backend — NestJS 10 microservices
 
-| Service | Port | Apigee prefix | Health |
-|---------|------|---------------|--------|
-| auth-service | 3001 | `/auth/api/v1` | `/api/v1/health` |
-| user-service | 3002 | `/user/api/v1` | `/api/v1/health` |
-| config-service | 3003 | `/config/api/v1` | `/api/v1/health` |
-| squad-service | 3004 | `/squad/api/v1` | `/api/v1/health` |
-| survey-service | 3005 | `/survey/api/v1` | `/api/v1/health` |
-| notification-service | 3006 | `/notification/api/v1` | `/api/v1/health` |
+| Service | Port | Base URL |
+|---------|------|----------|
+| auth-service | 3001 | `http://<HOST>:3001/api/v1` |
+| user-service | 3002 | `http://<HOST>:3002/api/v1` |
+| config-service | 3003 | `http://<HOST>:3003/api/v1` |
+| squad-service | 3004 | `http://<HOST>:3004/api/v1` |
+| survey-service | 3005 | `http://<HOST>:3005/api/v1` |
+| notification-service | 3006 | `http://<HOST>:3006/api/v1` |
 
 Shared library: `myboss-backend/libs/common`
 
 ### Admin portal
 
-React 19 · Vite 6 · axios — builds with `npm run build:apigee` for demo/production.
+React 19 · Vite 6 · axios — Docker build uses `BUILD_MODE=demo` with direct ports baked in.
 
 ### Mobile
 
@@ -49,7 +49,7 @@ Flutter 3.35.7 · BLoC · app version **1.0.0+1**
 | mariadb | 11.4 | Optional shared DB (`with-mariadb` profile) |
 | redis | 7-alpine | Optional local cache |
 
-**There is no nginx API gateway.** Clients call **Orange Apigee**; Apigee routes to VM ports 3001–3006.
+**There is no nginx API gateway.** Clients call microservices **directly** on ports **3001–3006**.
 
 ---
 
@@ -77,12 +77,12 @@ Flutter 3.35.7 · BLoC · app version **1.0.0+1**
 
 | Port | Service | Exposure |
 |------|---------|----------|
-| **3001–3006** | Microservices | Apigee / internal only |
-| **8081** | Admin SPA (static) | Optional direct access |
+| **3001–3006** | Microservices | Expose to clients (firewall-restrict in production) |
+| **8081** | Admin SPA (static) | Direct access |
 | **3306** | MariaDB | Internal (`DB_ENABLED=true`) |
 | **5173** | Vite dev | Local development only |
 
-Apigee terminates TLS publicly at `https://api-demo.orange.com`.
+Use HTTPS at a load balancer or reverse proxy if required in production. Demo uses HTTP on direct ports.
 
 ---
 
@@ -92,10 +92,7 @@ Apigee terminates TLS publicly at `https://api-demo.orange.com`.
 Mobile app / Admin SPA
         │
         ▼
-Orange Apigee  (https://api-demo.orange.com)
-        │
-        ▼
-Demo VM — Docker (ports 3001–3006)
+Demo VM — Docker (ports 3001–3006, admin :8081)
         │
         ├── auth-service      :3001
         ├── user-service      :3002
@@ -105,7 +102,7 @@ Demo VM — Docker (ports 3001–3006)
         └── notification-service :3006
 ```
 
-Admin Docker container (8081) serves static files only — the SPA calls Apigee for APIs.
+Admin Docker container (8081) serves static files — the SPA calls the same host on `:3001–3005`.
 
 ---
 
@@ -184,9 +181,9 @@ docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --bu
 |-----------|-----|
 | Backend health | `http://<VM>:3001/api/v1/health` … `:3006` |
 | Admin (Docker) | `http://<VM>:8081` |
-| Apigee (clients) | `https://api-demo.orange.com` |
+| APIs (clients) | `http://<VM>:3001/api/v1` … `:3006` |
 
-Wire Apigee proxies to `<VM_IP>:3001–3006` — see [`APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md).
+Set `DEMO_HOST=<VM_IP>` when building admin so browser clients reach the APIs — see [`SERVICE_URLS.md`](../deployment/SERVICE_URLS.md).
 
 ### Reset demo data (before QA)
 
@@ -201,7 +198,6 @@ Wire Apigee proxies to `<VM_IP>:3001–3006` — see [`APIGEE_CONNECTION.md`](..
 ```bash
 ./scripts/verify-backend.sh
 ./scripts/verify-mobile-api.sh 127.0.0.1
-./scripts/verify-mobile-api.sh --apigee    # after Apigee is wired
 ./scripts/verify-localhost.sh
 
 docker compose -f docker/docker-compose.demo.yml ps
@@ -226,12 +222,10 @@ QA guide: [`deployment/TESTING.md`](../deployment/TESTING.md)
 
 ```bash
 sudo ufw allow OpenSSH
-sudo ufw allow from <APIGEE_IP_RANGE> to any port 3001:3006 proto tcp
-sudo ufw allow 8081/tcp   # optional — admin SPA direct access
+sudo ufw allow 8081/tcp
+sudo ufw allow 3001:3006/tcp   # restrict to office/VPN IP range in production
 sudo ufw enable
 ```
-
-Do **not** expose 3001–3006 to the public internet — only Apigee should reach them.
 
 ---
 
@@ -260,8 +254,7 @@ cd ../myboss-admin && git pull
 | `stop-demo-server.sh` | Stop demo stack |
 | `reset-demo-data.sh` | Restore in-memory demo seed |
 | `verify-backend.sh` | Health checks :3001–3006 + push status |
-| `verify-mobile-api.sh [HOST]` | Mobile API governance (direct ports) |
-| `verify-mobile-api.sh --apigee` | Same checks through Apigee |
+| `verify-mobile-api.sh [HOST]` | Mobile API smoke test (direct ports) |
 | `verify-localhost.sh` | Full feature smoke test |
 | `fix-admin-login.sh` | Recreate auth if admin password fails |
 
@@ -305,10 +298,9 @@ Details: [`../cicd/CI_CD.md`](../cicd/CI_CD.md) · Secrets: [`ENV_AND_GITLAB_VAR
 - [ ] All four repos cloned under `/opt/myboss`
 - [ ] `.env` with strong `JWT_SECRET` and `INTERNAL_SERVICE_TOKEN`
 - [ ] `deploy-demo-server.sh` succeeds; `verify-backend.sh` passes
-- [ ] Apigee proxies route to VM `:3001–3006`
-- [ ] `verify-mobile-api.sh --apigee` passes
-- [ ] Firewall: 3001–3006 restricted to Apigee; not public
-- [ ] Admin built with Apigee URLs (`build:apigee` / Docker default)
+- [ ] `verify-mobile-api.sh <SERVER_IP>` passes
+- [ ] Firewall: 8081 + 3001–3006 open to clients that need access
+- [ ] Admin built with `DEMO_HOST=<SERVER_IP>` for cross-device access
 - [ ] Secrets not committed to git
 
 ---

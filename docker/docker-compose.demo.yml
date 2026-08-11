@@ -190,7 +190,8 @@ services:
       context: ${MYBOSS_ADMIN_DIR:-../myboss-admin}
       dockerfile: docker/Dockerfile
       args:
-        BUILD_MODE: apigee
+        BUILD_MODE: ${ADMIN_BUILD_MODE:-demo}
+        DEMO_HOST: ${DEMO_HOST:-127.0.0.1}
     container_name: myboss-admin
     restart: unless-stopped
     ports: ['8081:80']

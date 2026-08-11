@@ -4,7 +4,7 @@ Four projects that work together as a single product. Keep them as **sibling fol
 
 > **New machine or new phone?** Start with [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md).  
 > **DevOps / VM deploy:** [`devops/DEVOPS.md`](devops/DEVOPS.md).  
-> **Env variables + GitLab CI/CD:** [`deployment/ENV_AND_GITLAB_VARIABLES.md`](deployment/ENV_AND_GITLAB_VARIABLES.md)
+> **Client URLs:** [`deployment/SERVICE_URLS.md`](deployment/SERVICE_URLS.md)
 
 ```
 myboss-repos/
@@ -14,7 +14,7 @@ myboss-repos/
 └── myboss-platform/    Docs, Docker, deploy scripts
 ```
 
-Clients call **Orange Apigee** in demo/production. Local backend runs on direct Docker ports `:3001–3006`.
+Clients call **microservices directly** on ports **3001–3006**. No Apigee. No nginx API gateway.
 
 ---
 
@@ -35,8 +35,6 @@ git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
 git clone https://github.com/areejobaid17894-blip/myboss-platform.git
 ```
 
-ZIP fallback (no Git): download `main.zip` from each repo on GitHub, unzip as siblings, remove `-main` suffix from folder names.
-
 ---
 
 ## Run the full demo stack
@@ -53,9 +51,9 @@ chmod +x scripts/*.sh
 | URL | Purpose |
 |-----|---------|
 | http://127.0.0.1:5173 | Admin (Vite — `cd ../myboss-admin && npm run dev`) |
-| http://127.0.0.1:8081 | Admin (Docker — Apigee APIs) |
+| http://127.0.0.1:8081 | Admin (Docker — direct port APIs) |
+| http://127.0.0.1:8092 | Employee web (Flutter — `./run-local-web.sh`) |
 | http://127.0.0.1:3001/api/v1/docs | Auth Swagger |
-| https://api-demo.orange.com | Apigee (mobile + deployed admin) |
 
 Reset demo data: `./scripts/reset-demo-data.sh`  
 Stop: `./scripts/stop-demo-server.sh`
@@ -83,28 +81,32 @@ npm install && cp .env.example .env.development
 npm run dev
 ```
 
-Open http://127.0.0.1:5173 — APIs on `localhost:3001–3006`.
+Open http://127.0.0.1:5173 — APIs on `localhost:3001–3005`.
 
 ### Mobile (Flutter)
 
-**Apigee:**
+**Emulator / same machine:**
 
 ```bash
 cd myboss-mobile
 fvm flutter pub get && fvm flutter gen-l10n
-fvm flutter run \
-  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
-  --dart-define=ENV=demo \
-  --dart-define=DEMO_MODE=true
-```
-
-**Local Docker backend:**
-
-```bash
 fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
 ```
 
-Web hot reload: `./run-local-web.sh` (Apigee or `USE_DIRECT_PORTS=true`)
+**LAN / deployed server:**
+
+```bash
+fvm flutter run --dart-define=API_HOST=<SERVER_IP> --dart-define=ENV=demo --dart-define=DEMO_MODE=true
+SERVER_HOST=<SERVER_IP> ./build-external-android.sh
+```
+
+**Employee web (browser):**
+
+```bash
+./run-local-web.sh                                    # localhost only
+fvm flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8092 \
+  --dart-define=API_HOST=<SERVER_IP> --dart-define=ENV=demo --dart-define=DEMO_MODE=true
+```
 
 → [mobile README](https://github.com/areejobaid17894-blip/myboss-mobile/blob/main/README.md)
 
@@ -117,13 +119,11 @@ cd myboss-platform
 ./scripts/install-demo-server.sh /opt/myboss
 cd /opt/myboss/myboss-platform
 cp .env.example .env
-# Set JWT_SECRET, INTERNAL_SERVICE_TOKEN, DEMO_HOST=<public-ip>
+# Set JWT_SECRET, INTERNAL_SERVICE_TOKEN, DEMO_HOST=<lan-or-public-ip>
 ./scripts/deploy-demo-server.sh <SERVER_IP>
 ```
 
-Wire Apigee to VM ports 3001–3006: [`deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTION.md)
-
-External Android APK: `cd myboss-mobile && ./build-apigee-android.sh`
+See [`deployment/SERVICE_URLS.md`](deployment/SERVICE_URLS.md) for client URLs and firewall ports.
 
 ---
 
@@ -155,8 +155,8 @@ export MYBOSS_MOBILE_DIR=/path/to/myboss-mobile
 |-----|---------|
 | [NEW_DEVICE_SETUP.md](NEW_DEVICE_SETUP.md) | New laptop / phone |
 | [devops/DEVOPS.md](devops/DEVOPS.md) | VM deploy & verify |
+| [deployment/SERVICE_URLS.md](deployment/SERVICE_URLS.md) | Direct port URLs |
 | [deployment/TESTING.md](deployment/TESTING.md) | QA checklist |
-| [deployment/APIGEE_CONNECTION.md](deployment/APIGEE_CONNECTION.md) | Apigee proxies |
 | [mobile/ANDROID_STUDIO.md](mobile/ANDROID_STUDIO.md) | Emulator & APK |
 
 Per-app READMEs: [backend](../../myboss-backend/README.md) · [admin](../../myboss-admin/README.md) · [mobile](../../myboss-mobile/README.md) · [platform](../README.md)

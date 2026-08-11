@@ -65,7 +65,7 @@ cd myboss-platform
 Expected:
 
 ```bash
-curl http://127.0.0.1:8090/notification/api/v1/push/status
+curl http://127.0.0.1:3006/api/v1/push/status
 # {"fcmEnabled":true,"mode":"live"}
 ```
 
@@ -137,7 +137,7 @@ Check push audit (admin JWT):
 
 ```bash
 curl -H "Authorization: Bearer <admin-token>" \
-  http://127.0.0.1:8090/notification/api/v1/push/audit?limit=10
+  http://127.0.0.1:3006/api/v1/push/audit?limit=10
 ```
 
 ---

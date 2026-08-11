@@ -2,7 +2,7 @@
 
 > **Service:** config-service (port 3003)  
 > **Gateway path:** `/config/api/v1/chat/*`  
-> **Swagger:** http://127.0.0.1:8090/config/api/v1/docs (tag: **Chat**)
+> **Swagger:** http://127.0.0.1:3003/api/v1/docs (tag: **Chat**)
 
 ## Overview
 
@@ -36,11 +36,11 @@ flowchart LR
 
 | Endpoint | Auth | Orange governance |
 |---|---|---|
-| `GET /chat/config` | **Public** | Apigee: no JWT verify |
-| `GET /chat/health` | **Public** | Apigee: monitoring |
-| `GET /chat/visitor` | **JWT** | Apigee: verify JWT |
-| `GET /chat/messages` | **JWT** | Apigee: verify JWT |
-| `POST /chat/messages` | **JWT** | Apigee: verify JWT |
+| `GET /chat/config` | **Public** | Public |
+| `GET /chat/health` | **Public** | Public |
+| `GET /chat/visitor` | **JWT** | JWT |
+| `GET /chat/messages` | **JWT** | JWT |
+| `POST /chat/messages` | **JWT** | JWT |
 
 All authenticated calls require:
 
@@ -203,7 +203,7 @@ Interactive docs are generated from NestJS decorators on `ChatController` and `S
 
 | Environment | Swagger UI |
 |---|---|
-| Local gateway | http://127.0.0.1:8090/config/api/v1/docs |
+| Local gateway | http://127.0.0.1:3003/api/v1/docs |
 | Public tunnel | `https://<tunnel-host>/config/api/v1/docs` (see `demo-public-url.txt` at repo root) |
 | Direct service | http://127.0.0.1:3003/api/v1/docs |
 
@@ -214,10 +214,10 @@ In Swagger UI, expand tag **Chat**, click **Authorize**, paste `Bearer {accessTo
 All chat routes use the existing **config** proxy — no separate chat proxy needed:
 
 ```
-https://api-demo.orange.com/config/api/v1/chat/config     → public
-https://api-demo.orange.com/config/api/v1/chat/health     → public
-https://api-demo.orange.com/config/api/v1/chat/visitor    → JWT verify
-https://api-demo.orange.com/config/api/v1/chat/messages   → JWT verify
+http://<HOST>:3003/api/v1/chat/config     → public
+http://<HOST>:3003/api/v1/chat/health     → public
+http://<HOST>:3003/api/v1/chat/visitor    → JWT verify
+http://<HOST>:3003/api/v1/chat/messages   → JWT verify
 ```
 
 See also: [`docs/architecture/APIGEE_CHAT.md`](../architecture/APIGEE_CHAT.md) and [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md).
@@ -248,25 +248,25 @@ JWT_SECRET=...                 # same secret as auth-service
 
 ```bash
 # 1. Sign in
-SIGN=$(curl -s -X POST http://127.0.0.1:8090/auth/api/v1/auth/sign-in \
+SIGN=$(curl -s -X POST http://127.0.0.1:3001/api/v1/auth/sign-in \
   -H "Content-Type: application/json" -d '{"email":"demo@orange.com"}')
 SESSION=$(echo "$SIGN" | python3 -c "import sys,json; print(json.load(sys.stdin)['sessionId'])")
 OTP=$(echo "$SIGN" | python3 -c "import sys,json; print(json.load(sys.stdin).get('demoOtpCode',''))")
 
 # 2. Verify OTP → token
-TOKEN=$(curl -s -X POST http://127.0.0.1:8090/auth/api/v1/auth/verify-2fa \
+TOKEN=$(curl -s -X POST http://127.0.0.1:3001/api/v1/auth/verify-2fa \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"$SESSION\",\"code\":\"$OTP\"}" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
 
 # 3. Send message to squad member (user id 1 = Nisreen for demo@orange.com)
-curl -s -X POST http://127.0.0.1:8090/config/api/v1/chat/messages \
+curl -s -X POST http://127.0.0.1:3003/api/v1/chat/messages \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"recipientId":"1","text":"Hello teammate"}'
 
 # 4. Poll messages
-curl -s "http://127.0.0.1:8090/config/api/v1/chat/messages?peerId=1" \
+curl -s "http://127.0.0.1:3003/api/v1/chat/messages?peerId=1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

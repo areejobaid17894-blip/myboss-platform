@@ -9,7 +9,7 @@ REST API reference for my boss app microservices.
 
 Related:
 - [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md) — Orange errors, roles
-- [`../deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md) — Apigee proxies
+- [`../deployment/SERVICE_URLS.md`](../deployment/SERVICE_URLS.md) — Direct port URLs
 
 ---
 

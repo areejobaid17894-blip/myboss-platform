@@ -6,17 +6,17 @@
 
 | Document | Description |
 |---|---|
-| [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md) | Orange governance, errors, roles, Apigee paths |
+| [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md) | Orange governance, errors, roles |
 | [`CHAT_API.md`](CHAT_API.md) | Native squad chat — endpoints, auth, mobile flow, curl examples |
-| [`../architecture/APIGEE_CHAT.md`](../architecture/APIGEE_CHAT.md) | Chat + Apigee proxy policies |
+| [`../deployment/SERVICE_URLS.md`](../deployment/SERVICE_URLS.md) | Direct port URLs (local + deployed) |
 | [`../deployment/TESTING.md`](../deployment/TESTING.md) | QA checklist + Swagger links |
 
 ## Base URLs
 
 | Environment | Pattern | Example |
 |---|---|---|
-| Development (direct) | `http://localhost:{port}/api/v1` | Auth `:3001` … Notification `:3006` |
-| Demo / production (Apigee) | `https://api-demo.orange.com/{service}/api/v1` | `https://api-demo.orange.com/auth/api/v1/auth/sign-in` |
+| Development (local) | `http://localhost:{port}/api/v1` | Auth `:3001` … Notification `:3006` |
+| Demo / deployed VM | `http://<SERVER_IP>:{port}/api/v1` | `http://213.139.63.204:3001/api/v1/auth/sign-in` |
 
 ## Swagger documentation
 
@@ -31,7 +31,15 @@ Each service exposes OpenAPI (Swagger UI) when `APP_ENV=development|demo` or `SW
 | Survey | http://localhost:3005/api/v1/docs |
 | Notification | http://localhost:3006/api/v1/docs |
 
-Via gateway (same paths under each prefix): `http://localhost:8090/auth/api/v1/docs`, etc.
+## Service ports
+
+Each service listens on its own port — see [`SERVICE_URLS.md`](../deployment/SERVICE_URLS.md).
+
+## Verification
+
+```bash
+./scripts/verify-mobile-api.sh 127.0.0.1
+```
 
 ## Authentication classification
 
@@ -156,22 +164,6 @@ Full chat documentation: [`docs/api/CHAT_API.md`](CHAT_API.md)
 | POST | `/chat/messages` | JWT | Send direct message to squad peer |
 
 **Mobile chat rules:** squad members only; requires active squad; native UI (no external widget).
-
-## Apigee proxy routes
-
-See `docs/deployment/pdf/03_APIGEE_CONNECTION.md` for proxy setup:
-
-- `/auth/api/v1/**` → auth-service
-- `/user/api/v1/**` → user-service
-- `/config/api/v1/**` → config-service
-- `/squad/api/v1/**` → squad-service
-- `/survey/api/v1/**` → survey-service
-
-## Verification
-
-```bash
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-```
 
 ---
 
