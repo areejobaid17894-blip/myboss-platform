@@ -22,6 +22,6 @@ docker compose -f "$COMPOSE_FILE" ps
 echo ""
 echo "Health checks (wait ~30s after first build):"
 echo "  ./scripts/verify-backend.sh"
+echo "  ./scripts/verify-mobile-api.sh 127.0.0.1"
 echo ""
-echo "Mobile web + gateway:"
-echo "  ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh"
+echo "Admin: http://127.0.0.1:8081  |  Vite dev: cd ../myboss-admin && npm run dev"

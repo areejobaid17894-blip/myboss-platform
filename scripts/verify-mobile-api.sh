@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Verify mobile API endpoints against governance requirements (direct ports or gateway).
+# Verify mobile API endpoints against governance requirements.
 # Usage:
-#   ./infrastructure/scripts/verify-mobile-api.sh [HOST] [--gateway] [--https]
+#   ./scripts/verify-mobile-api.sh [HOST]           # direct ports :3001–3005
+#   ./scripts/verify-mobile-api.sh --apigee         # https://api-demo.orange.com
 set -euo pipefail
 
 HOST="127.0.0.1"
-USE_GATEWAY=false
-USE_HTTPS=false
+USE_APIGEE=false
 AUTH_HEADER=""
 
 for arg in "$@"; do
   case "$arg" in
-    --gateway) USE_GATEWAY=true ;;
-    --https) USE_HTTPS=true ;;
+    --apigee) USE_APIGEE=true ;;
+    --gateway)
+      echo "WARN: --gateway (nginx :8090) is removed. Use --apigee or direct ports." >&2
+      USE_APIGEE=true
+      ;;
+    --https) ;; # legacy no-op
     *)
       if [[ "$arg" != --* ]]; then
         HOST="$arg"
@@ -21,18 +25,17 @@ for arg in "$@"; do
   esac
 done
 
-if [ "$USE_HTTPS" = true ] || [[ "$HOST" == *trycloudflare.com* ]]; then
+if [ "$USE_APIGEE" = true ]; then
+  HOST="${APIGEE_HOST:-api-demo.orange.com}"
   SCHEME="https"
-  PORT=""
 else
   SCHEME="http"
-  PORT=":8090"
 fi
 
 prefix() {
   local service="$1"
-  if [ "$USE_GATEWAY" = true ]; then
-    echo "${SCHEME}://${HOST}${PORT}/${service}/api/v1"
+  if [ "$USE_APIGEE" = true ]; then
+    echo "${SCHEME}://${HOST}/${service}/api/v1"
   else
     case "$service" in
       auth) echo "${SCHEME}://${HOST}:3001/api/v1" ;;
@@ -51,7 +54,11 @@ SQUAD_BASE="$(prefix squad)"
 SURVEY_BASE="$(prefix survey)"
 
 echo "==> my boss app mobile API governance check"
-echo "    Host: $HOST (gateway=$USE_GATEWAY)"
+if [ "$USE_APIGEE" = true ]; then
+  echo "    Apigee: ${SCHEME}://${HOST}"
+else
+  echo "    Host: $HOST (direct ports)"
+fi
 echo ""
 
 check() {

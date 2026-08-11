@@ -121,16 +121,18 @@ These variables are defined in `myboss-platform/.env.example` and passed into Do
 | `TWO_FA_DEMO_ENABLED` | Auto-fill OTP in demo | `true` | Per env |
 | `OTP_PROVIDER` | `demo` or `orange` | `demo` | Per env |
 | `ORANGE_OTP_ENABLED` | Enable Orange email OTP | `false` | Per env |
-| `ORANGE_SSO_TOKEN_URL` | Orange SSO token endpoint | Orange preprod URL | Per env |
-| `ORANGE_SSO_CLIENT_ID` | SSO client id | *(from Orange)* | Yes |
+| `ORANGE_SSO_TOKEN_URL` | Orange SSO token endpoint | `http://10.4.3.27:9001/sso/openid-connect/v1/token` | Per env |
+| `ORANGE_SSO_CLIENT_ID` | SSO client id (`apigee-app`) | *(from Orange)* | Yes |
 | `ORANGE_SSO_CLIENT_SECRET` | SSO client secret | *(from Orange)* | Yes |
-| `ORANGE_SSO_API_KEY` | Optional Apigee key for SSO | | Yes |
-| `ORANGE_EMAIL_API_URL` | Orange email send API | preprod URL | Per env |
+| `ORANGE_SSO_API_KEY` | `apiKey` header on SSO request | *(from Orange)* | Yes |
+| `ORANGE_EMAIL_API_URL` | Maxit email send API | `http://10.4.3.27:9001/maxit/notification/v1/email/send` | Per env |
 | `ORANGE_EMAIL_CLIENT_NAME` | Email client name | `sajelni` | Per env |
 | `ORANGE_EMAIL_CHANNEL` | Email channel | `survey_app` | Per env |
 | `ORANGE_EMAIL_TYPE` | Template type | `blank` / `blank_ar` | Per env |
-| `ORANGE_EMAIL_API_KEY` | Apigee apiKey for email | | Yes |
+| `ORANGE_EMAIL_API_KEY` | `apiKey` header on email request | *(from Orange)* | Yes |
 | `ORANGE_OTP_FALLBACK_DEMO` | Fall back to demo OTP if Orange fails | `false` | Per env |
+
+Setup guide: [`ORANGE_OTP_SETUP.md`](ORANGE_OTP_SETUP.md)
 
 ### Push notifications (Firebase)
 

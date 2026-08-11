@@ -1,80 +1,72 @@
 # my boss app — Environment Setup Guide
 
-Local development setup for all applications in the **multi-repo** layout. For production/demo deployment, use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
+Local development for all applications. For VM/production deploy use [`../devops/DEVOPS.md`](../devops/DEVOPS.md).
 
-**Canonical guides:** [`../NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md) (new laptop / phone) · [`ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md) (all variables + GitLab CI/CD)
+**Start here on a new machine:** [`../NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)  
+**All variables + GitLab:** [`ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md)
 
 ---
 
 ## Repository layout
-
-Clone all four repos as **siblings**:
 
 ```
 myboss-repos/
 ├── myboss-mobile/
 ├── myboss-admin/
 ├── myboss-backend/
-└── myboss-platform/    ← docs + deploy scripts live here
+└── myboss-platform/
 ```
-
-See [`../../../README.md`](../../../README.md) in the parent folder for the full step-by-step guide.
 
 ---
 
 ## Prerequisites
 
-| Tool | Version | Guide |
-|------|---------|-------|
-| Node.js | **20 LTS** | [nodejs.org](https://nodejs.org/) |
-| Flutter | **3.35.7** (FVM) | [`../mobile/ANDROID_STUDIO.md`](../mobile/ANDROID_STUDIO.md) |
-| Docker | 24+ Compose v2 | [`../devops/DEVOPS.md`](../devops/DEVOPS.md) |
-| Android Studio | Latest | [`../mobile/ANDROID_STUDIO.md`](../mobile/ANDROID_STUDIO.md) |
-| Git | Latest | — |
+| Tool | Version |
+|------|---------|
+| Node.js | 20 LTS |
+| Flutter | 3.35.7 (FVM) |
+| Docker | 24+ Compose v2 |
+| Android Studio | Latest (mobile) |
 
 ---
 
-## 1. Environment files
-
-**Platform** (Docker deploy):
+## Environment files
 
 ```bash
-cd myboss-platform
-cp .env.example .env
-# JWT_SECRET, INTERNAL_SERVICE_TOKEN
+# Platform (Docker — required)
+cd myboss-platform && cp .env.example .env
+
+# Backend (npm dev only)
+cd myboss-backend && cp .env.example .env
+
+# Admin (Vite dev)
+cd myboss-admin && cp .env.example .env.development
 ```
 
-**Backend** (local npm dev):
-
-```bash
-cd myboss-backend
-cp .env.example .env
-```
-
-**Admin** (Vite dev):
-
-```bash
-cd myboss-admin
-cp .env.example .env.development
-```
+Use the **same** `JWT_SECRET` and `INTERNAL_SERVICE_TOKEN` in platform and backend `.env` if you mix Docker and npm.
 
 ---
 
-## 2. Full demo stack (fastest)
+## Full demo stack
 
 ```bash
 cd myboss-platform
 chmod +x scripts/*.sh
 ./scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+./scripts/verify-backend.sh
 ```
 
-- Mobile: http://127.0.0.1:8090/app/
-- Admin: http://127.0.0.1:8090/login
+| App | How to open |
+|-----|-------------|
+| Admin | `cd ../myboss-admin && npm run dev` → http://127.0.0.1:5173 |
+| Swagger | http://127.0.0.1:3001/api/v1/docs |
+| Mobile | See below |
 
 ---
 
-## 3. Backend (local dev, no Docker)
+## Per-app development
+
+### Backend
 
 ```bash
 cd myboss-backend
@@ -83,13 +75,7 @@ npm run build -w @myboss/common
 npm run start:dev
 ```
 
-Verify: http://localhost:3001/api/v1/docs
-
-Details: [`../../../myboss-backend/README.md`](../../../myboss-backend/README.md) *(sibling repo)*
-
----
-
-## 4. Admin portal (Vite)
+### Admin
 
 ```bash
 cd myboss-admin
@@ -97,71 +83,53 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173
+`.env.development` points at `localhost:3001–3006`.
 
----
+### Mobile
 
-## 5. Mobile app (Flutter)
+**Apigee:**
 
 ```bash
 cd myboss-mobile
-fvm install 3.35.7
-fvm flutter pub get
-fvm flutter gen-l10n
-fvm flutter run --dart-define=DEMO_MODE=true
+fvm flutter pub get && fvm flutter gen-l10n
+fvm flutter run \
+  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
+  --dart-define=ENV=demo \
+  --dart-define=DEMO_MODE=true
 ```
 
-Full Android Studio guide: [`../mobile/ANDROID_STUDIO.md`](../mobile/ANDROID_STUDIO.md)
-
----
-
-## 6. Optional: MariaDB & Redis
+**Local backend:**
 
 ```bash
-cd myboss-platform/docker
-docker compose up -d mariadb redis
+fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
 ```
 
-Enable persistence in `.env`:
+Web: `./run-local-web.sh`
 
-```env
-DB_ENABLED=true
-MARIADB_HOST=localhost
-MARIADB_PORT=3306
-MARIADB_DATABASE=myboss
-MARIADB_USER=myboss
-MARIADB_PASSWORD=changeme
-```
+---
 
-All microservices share the **`myboss`** database (no database-per-service). Schema reference: [`../database/DATABASE.md`](../database/DATABASE.md).
+## Apigee vs local
 
-**Demo + MariaDB:**
+| Mode | Admin | Mobile |
+|------|-------|--------|
+| Local dev | `npm run dev` (:5173) | `ENV=development` |
+| Demo deploy | Docker :8081 or `build:apigee` | `build-apigee-android.sh` |
+| API base | Apigee or direct ports | Same |
+
+Details: [`APIGEE_CLIENT_URLS.md`](APIGEE_CLIENT_URLS.md) · [`../architecture/APIGEE_VS_NGINX.md`](../architecture/APIGEE_VS_NGINX.md)
+
+---
+
+## Verify setup
 
 ```bash
-docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build
+cd myboss-platform
+./scripts/verify-backend.sh
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-localhost.sh
 ```
 
----
-
-## 7. Environments
-
-| `APP_ENV` | Swagger | 2FA |
-|-----------|---------|-----|
-| development | On | Demo |
-| demo | On | Demo |
-| uat | Configurable | TBD |
-| production | Off | Production provider |
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| Port conflicts | Change ports in `.env` (3001–3005, 5173, 8090) |
-| Flutter build | `fvm flutter clean && fvm flutter pub get` |
-| Gateway 502 | Wait 30s after first Docker build; run `./scripts/verify-backend.sh` |
-| Sibling repos not found | Export `MYBOSS_BACKEND_DIR`, `MYBOSS_ADMIN_DIR`, `MYBOSS_MOBILE_DIR` |
+QA guide: [`TESTING.md`](TESTING.md)
 
 ---
 

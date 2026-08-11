@@ -5,7 +5,7 @@ Reference designs:
 - **Admin HTML mockup:** `the BOSS Admin web page Demo V2 July 2026.html` (11 nav sections, black sidebar)
 - **Platform journey PDF:** `v1 Platform employee journey Rev 1.0 July 2026.pptx.pdf` (admin acceptance criteria on screens #14–16)
 
-Admin portal: `myboss-admin/` — **the Boss — Admin Console** at `/login` on gateway `:8090`.
+Admin portal: `myboss-admin/` — **the Boss — Admin Console** at http://127.0.0.1:5173 (Vite dev) or `:8081` (Docker).
 
 ## Navigation coverage (HTML V2)
 
@@ -66,5 +66,5 @@ Account: `admin@orange.com` / `admin123` + OTP (auto-fill when `DEMO_MODE=true`)
 - [EMPLOYEE_JOURNEY_COVERAGE.md](./EMPLOYEE_JOURNEY_COVERAGE.md)
 - [GALLERY_NOTIFICATIONS.md](./architecture/GALLERY_NOTIFICATIONS.md)
 - [NOTIFICATIONS_PRODUCTION.md](./architecture/NOTIFICATIONS_PRODUCTION.md)
-- [DATA_MODEL.md](./architecture/DATA_MODEL.md)
+- [DATABASE.md](../database/DATABASE.md)
 - [TEAM_REVIEW_GUIDE.md](./TEAM_REVIEW_GUIDE.md)

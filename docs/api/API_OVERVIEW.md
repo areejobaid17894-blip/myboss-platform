@@ -9,15 +9,14 @@
 | [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md) | Orange governance, errors, roles, Apigee paths |
 | [`CHAT_API.md`](CHAT_API.md) | Native squad chat — endpoints, auth, mobile flow, curl examples |
 | [`../architecture/APIGEE_CHAT.md`](../architecture/APIGEE_CHAT.md) | Chat + Apigee proxy policies |
-| [`../deployment/pdf/04_TESTING_GUIDE.md`](../deployment/pdf/04_TESTING_GUIDE.md) | QA checklist + Swagger links |
+| [`../deployment/TESTING.md`](../deployment/TESTING.md) | QA checklist + Swagger links |
 
 ## Base URLs
 
 | Environment | Pattern | Example |
 |---|---|---|
-| Development (direct) | `http://localhost:{port}/api/v1` | Auth `:3001`, User `:3002`, Config `:3003`, Squad `:3004`, Survey `:3005`, Notification `:3006` |
-| Development (gateway) | `http://localhost:8090/{service}/api/v1` | `http://localhost:8090/auth/api/v1/auth/sign-in` |
-| Apigee (future) | `https://api-demo.orange.com/{service}/api/v1` | Same path structure as gateway |
+| Development (direct) | `http://localhost:{port}/api/v1` | Auth `:3001` … Notification `:3006` |
+| Demo / production (Apigee) | `https://api-demo.orange.com/{service}/api/v1` | `https://api-demo.orange.com/auth/api/v1/auth/sign-in` |
 
 ## Swagger documentation
 

@@ -8,23 +8,24 @@
 | Document | Purpose |
 |---|---|
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | Endpoint catalogue + auth classes |
-| [`../deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md) | Apigee proxy routes and policies |
-| [`DATA_MODEL.md`](DATA_MODEL.md) | Target MariaDB schema (redirect → `DATABASE.md`) |
+| [`../deployment/APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md) | Apigee proxy routes and policies |
+| [`../database/DATABASE.md`](../database/DATABASE.md) | MariaDB schema + demo seed |
 | [`APIGEE_CHAT.md`](APIGEE_CHAT.md) | Chat-specific proxy notes |
 
 ## Architecture
 
 ```
-Mobile / Admin  →  Apigee (production) or nginx gateway :8090 (demo)  →  Microservices
+Mobile / Admin  →  Orange Apigee  →  Microservices (:3001–3006)
                          │
                          ├── /auth/api/v1/**   → auth-service   :3001
                          ├── /user/api/v1/**   → user-service   :3002
                          ├── /config/api/v1/** → config-service :3003
                          ├── /squad/api/v1/**  → squad-service  :3004
-                         └── /survey/api/v1/** → survey-service :3005
+                         ├── /survey/api/v1/** → survey-service :3005
+                         └── /notification/api/v1/** → notification-service :3006
 ```
 
-**Demo vs production:** nginx on `:8090` is a **stand-in for Apigee** during development. Production uses Orange Apigee with the **same path structure**. See [`APIGEE_VS_NGINX.md`](APIGEE_VS_NGINX.md).
+**Local dev:** direct ports `:3001–3006` (no nginx API gateway). See [`APIGEE_VS_NGINX.md`](APIGEE_VS_NGINX.md).
 
 Each service exposes:
 
@@ -124,7 +125,7 @@ Do **not** commit compiled `.js` files under `libs/common/src/` — TypeScript o
 
 ## Apigee checklist
 
-1. Create five proxies matching gateway paths (see `03_APIGEE_CONNECTION.md`)
+1. Create six proxies matching Apigee paths (see `APIGEE_CONNECTION.md`)
 2. Pass `Authorization` and `Accept-Language` unchanged on authenticated routes
 3. Do **not** expose internal sync routes publicly without IP allowlist + service token policy
 4. Spike arrest / CORS per Orange standards
@@ -133,14 +134,12 @@ Do **not** commit compiled `.js` files under `libs/common/src/` — TypeScript o
 ## Verification
 
 ```bash
-# Gateway smoke (includes squad browse)
 ./scripts/verify-localhost.sh
-
-# Mobile API via gateway
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-mobile-api.sh --apigee
 ```
 
-Swagger (direct): `http://localhost:3001/api/v1/docs` … `3005`.
+Swagger (direct): `http://localhost:3001/api/v1/docs` … `3006`.
 
 ---
 

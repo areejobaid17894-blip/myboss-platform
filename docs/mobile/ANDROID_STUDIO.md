@@ -62,32 +62,43 @@ myboss-mobile/lib/
 cd myboss-platform
 cp .env.example .env
 ./scripts/deploy-demo-server.sh 127.0.0.1
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
 ```
 
-Gateway health: `curl http://127.0.0.1:8090/health`
+Health: `curl http://127.0.0.1:3001/api/v1/health`
 
 ### Option B — Local dev (no Docker)
 
 ```bash
 cd myboss-backend
-npm install
-npm run start:dev
+npm install && npm run start:dev
 ```
 
-Services on ports **3001–3005**.
+Services on ports **3001–3006**.
+
+### Option C — Apigee only (no local backend)
+
+Use when Apigee proxies are already wired to a remote VM.
 
 ---
 
 ## 5. Run the app
 
-### Terminal
+### Terminal — Apigee
 
 ```bash
 cd myboss-mobile
-fvm flutter pub get
-fvm flutter gen-l10n
-fvm flutter run --dart-define=DEMO_MODE=true
+fvm flutter pub get && fvm flutter gen-l10n
+fvm flutter run \
+  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
+  --dart-define=ENV=demo \
+  --dart-define=DEMO_MODE=true
+```
+
+### Terminal — local Docker backend
+
+```bash
+fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
 ```
 
 ### Android Studio
@@ -101,59 +112,49 @@ fvm flutter run --dart-define=DEMO_MODE=true
 
 ## 6. API connection modes
 
-| Mode | Command | Backend path |
-|------|---------|--------------|
-| **Demo** (recommended) | `--dart-define=DEMO_MODE=true` | Gateway `:8090` (auto-probed at startup) |
-| **Dev emulator** | `--dart-define=ENV=development` | Direct ports via `10.0.2.2:3001–3005` |
-| **Dev physical device** | `--dart-define=API_HOST=<lan-ip>` | Direct ports on LAN IP |
+| Mode | Command | Backend |
+|------|---------|---------|
+| **Apigee demo** | `GATEWAY_ORIGIN=https://api-demo.orange.com` + `ENV=demo` | Orange Apigee |
+| **Dev emulator** | `ENV=development` | Direct ports via `10.0.2.2:3001–3006` |
+| **Dev physical device** | `ENV=development` + `GATEWAY_ORIGIN=http://<lan-ip>:3001` | LAN direct ports |
 
-When `DEMO_MODE=true`, the app probes hosts and picks the first reachable `/health`:
+Configuration: `lib/core/config/env_config.dart`
 
-1. `GATEWAY_ORIGIN`
-2. `API_HOSTS` (comma-separated)
-3. `API_HOST`
-4. Default from `demo_server_host.dart`
-
-**Emulator with local gateway:**
+**Emulator with local Docker:**
 
 ```bash
-fvm flutter run \
-  --dart-define=DEMO_MODE=true \
-  --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090
+fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
 ```
-
-Configuration files: `lib/core/config/` (`env_config.dart`, `demo_api_endpoints.dart`, `demo_server_host.dart`).
 
 ---
 
 ## 7. Physical Android device
 
-### Demo APK (recommended for QA / field test)
+### Apigee APK (recommended — works on mobile data)
 
 ```bash
 cd myboss-mobile
-./build-local-android.sh
-# Output: build/android-dist/myboss-demo-<lan-ip>.apk
+./build-apigee-android.sh
+# → build/android-dist/myboss-apigee-api-demo.orange.com.apk
 ```
 
-1. Copy APK to phone
-2. **Uninstall** old app first
-3. Install APK
-4. Phone and Mac on same Wi‑Fi **or** Cloudflare tunnel running
-5. Demo gateway on port **8090**
-
-### Development run (direct microservice ports)
+### LAN APK (same Wi‑Fi as demo server)
 
 ```bash
-# Find Mac LAN IP
-ipconfig getifaddr en0
+./build-local-android.sh
+# → build/android-dist/myboss-demo-<lan-ip>.apk
+```
+
+### Development run (USB)
+
+```bash
+ipconfig getifaddr en0   # Mac LAN IP
 
 fvm flutter run \
   --dart-define=ENV=development \
-  --dart-define=API_HOST=<lan-ip>
+  --dart-define=DEMO_MODE=true \
+  --dart-define=GATEWAY_ORIGIN=http://<lan-ip>:3001
 ```
-
-Allow firewall access to ports **3001–3005** (dev) or **8090** (demo).
 
 ---
 
@@ -161,18 +162,12 @@ Allow firewall access to ports **3001–3005** (dev) or **8090** (demo).
 
 | Script | Output |
 |--------|--------|
-| `build-local-android.sh` | Release APK → `build/android-dist/myboss-demo-*.apk` |
-| `build-demo-apk.sh` | Release APK (tunnel + demo host) |
-| `build-demo-web.sh` | Web build for gateway `/app/` |
-| `run-local-web.sh` | Local dev web at `:8092` |
-| `run-android-emulator.sh` | Emulator with demo gateway |
-| `build-demo-ios.sh` | iOS demo build (macOS only) |
-
-Deploy mobile web to gateway:
-
-```bash
-ALLOW_DEPLOY=1 ../../scripts/deploy-mobile-web.sh
-```
+| `build-apigee-android.sh` | Apigee demo APK |
+| `build-local-android.sh` | LAN APK |
+| `build-external-android.sh` | Apigee APK |
+| `run-local-web.sh` | Local dev web |
+| `run-android-emulator.sh` | Emulator helper |
+| `build-ios-demo.sh` | iOS demo build |
 
 ---
 
@@ -220,13 +215,12 @@ fvm flutter analyze
 
 | Problem | Fix |
 |---------|-----|
-| Network error on login | Backend not running — `curl http://127.0.0.1:8090/health` |
-| Emulator cannot reach API | Use `GATEWAY_ORIGIN=http://10.0.2.2:8090` with `DEMO_MODE=true` |
-| Physical device fails | Same Wi‑Fi; test `http://<mac-ip>:8090/health` in phone browser |
+| Network error on login | Backend not running — `curl http://127.0.0.1:3001/api/v1/health` |
+| Emulator cannot reach API | Use `ENV=development` (uses `10.0.2.2`) |
+| Physical device fails | Same Wi‑Fi; correct LAN IP in `GATEWAY_ORIGIN` |
+| Apigee unreachable | Use local dev mode or `./build-local-android.sh` |
 | Old APK still fails | Uninstall app before installing new APK |
 | Gradle sync failed | File → Invalidate Caches; `fvm flutter clean && fvm flutter pub get` |
-| OTP not received | Check auth logs for `[DEMO OTP]`; use demo build with auto-fill |
-| Vertical text / empty squad cards | Use latest build; see squad list RTL fixes |
 
 ---
 
@@ -234,9 +228,9 @@ fvm flutter analyze
 
 | Document | Purpose |
 |----------|---------|
-| [`../devops/DEVOPS.md`](../devops/DEVOPS.md) | Deploy backend & gateway |
+| [`../devops/DEVOPS.md`](../devops/DEVOPS.md) | Deploy backend |
+| [`../deployment/TESTING.md`](../deployment/TESTING.md) | QA checklist |
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | REST endpoints |
-| [`../deployment/pdf/04_TESTING_GUIDE.md`](../deployment/pdf/04_TESTING_GUIDE.md) | QA checklist |
 | [`../../myboss-mobile/README.md`](../../myboss-mobile/README.md) | Quick reference |
 
 ---

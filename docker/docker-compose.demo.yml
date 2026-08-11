@@ -60,10 +60,10 @@ services:
       TWO_FA_DEMO_ENABLED: ${TWO_FA_DEMO_ENABLED:-true}
       OTP_PROVIDER: ${OTP_PROVIDER:-demo}
       ORANGE_OTP_ENABLED: ${ORANGE_OTP_ENABLED:-false}
-      ORANGE_SSO_TOKEN_URL: ${ORANGE_SSO_TOKEN_URL:-http://host.docker.internal:19001/sso/openid-connect/v1/token}
+      ORANGE_SSO_TOKEN_URL: ${ORANGE_SSO_TOKEN_URL:-http://10.4.3.27:9001/sso/openid-connect/v1/token}
       ORANGE_SSO_CLIENT_ID: ${ORANGE_SSO_CLIENT_ID:-}
       ORANGE_SSO_CLIENT_SECRET: ${ORANGE_SSO_CLIENT_SECRET:-}
-      ORANGE_EMAIL_API_URL: ${ORANGE_EMAIL_API_URL:-http://host.docker.internal:19002/email/send}
+      ORANGE_EMAIL_API_URL: ${ORANGE_EMAIL_API_URL:-http://10.4.3.27:9001/maxit/notification/v1/email/send}
       ORANGE_EMAIL_CLIENT_NAME: ${ORANGE_EMAIL_CLIENT_NAME:-sajelni}
       ORANGE_EMAIL_CHANNEL: ${ORANGE_EMAIL_CHANNEL:-survey_app}
       ORANGE_EMAIL_TYPE: ${ORANGE_EMAIL_TYPE:-blank}

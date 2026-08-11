@@ -83,8 +83,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | Image | Tag | Usage |
 |-------|-----|--------|
 | node | 20-alpine | Backend service builds |
-| nginx | alpine | Admin portal container |
-| nginx | 1.27-alpine | API gateway (port 8090) |
+| nginx | alpine | Admin SPA static files (port 8081) |
 | mariadb | 11.4 | Shared database `myboss` (optional `with-mariadb` profile) |
 | redis | 7-alpine | Local/dev cache (optional compose) |
 
@@ -92,7 +91,6 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 
 | Tool | Version / notes |
 |------|-----------------|
-| cloudflared | 2026.7.2+ (quick tunnel for external demo) |
 | Docker Compose | v2+ |
 | FVM | Flutter version manager — `myboss-mobile/.fvmrc` |
 
@@ -122,16 +120,12 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 
 | Port | Service | Exposure |
 |------|---------|----------|
-| **8090** | API gateway (nginx) — mobile web `/app/`, admin `/login`, all API proxies | Public via Apigee or Cloudflare tunnel |
-| **3001** | auth-service | Apigee / internal only (not public in production) |
-| **3002** | user-service | Apigee / internal only |
-| **3003** | config-service (+ Chat API) | Apigee / internal only |
-| **3004** | squad-service | Apigee / internal only |
-| **3005** | survey-service (+ gallery) | Apigee / internal only |
-| **8081** | admin-portal (direct nginx) | Optional; prefer gateway **8090/login** |
-| **3306** | MariaDB | Internal only (when `DB_ENABLED=true`) |
-| **6379** | Redis | Internal only (future cache/sessions) |
+| **3001–3006** | Microservices | Apigee / internal only |
+| **8081** | admin-portal (static SPA) | Optional direct access |
+| **3306** | MariaDB | Internal (`DB_ENABLED=true`) |
 | **5173** | Vite dev server | Local development only |
+
+Public API entry: **Orange Apigee** (`https://api-demo.orange.com`).
 
 ### Docker containers (demo stack)
 
@@ -142,11 +136,11 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | myboss-config | `Dockerfile.config` | `/api/v1/health` |
 | myboss-squad | `Dockerfile.squad` | `/api/v1/health` |
 | myboss-survey | `Dockerfile.survey` | `/api/v1/health` |
-| myboss-admin | `Dockerfile.admin-portal` | nginx (profile `with-admin`) |
-| myboss-api-gateway | nginx:1.27-alpine | `/health` → `OK` |
+| myboss-admin | `Dockerfile.admin-portal` | nginx static (profile `with-admin`) |
+| myboss-notification | `Dockerfile.notification` | `/api/v1/health` |
 
 **Compose file:** `docker/docker-compose.demo.yml`  
-**Gateway:** deployed separately via `scripts/deploy-mobile-web.sh` (port **8090**)
+**Deploy:** `scripts/deploy-demo-server.sh`
 
 ### Apigee path mapping (production target)
 
@@ -158,7 +152,7 @@ Pinned versions for reproducible builds. CI uses Node **20**; mobile CI uses Flu
 | `/squad/api/v1/**` | squad-service:3004 | `GET /squads/stats` |
 | `/survey/api/v1/**` | survey-service:3005 | `GET /surveys/catalog` |
 
-Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_APIGEE_CONNECTION.md)
+Full guide: [`docs/deployment/APIGEE_CONNECTION.md`](deployment/APIGEE_CONNECTION.md)
 
 ---
 
@@ -171,7 +165,7 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 | JWT authentication on protected routes | **Implemented** | Global `JwtAuthGuard`; `@Public()` for open routes |
 | RBAC (ADMIN role) | **Implemented** | `RolesGuard` + `@Roles()` |
 | Swagger / OpenAPI per service | **Implemented** | `/api/v1/docs` when `APP_ENV=demo\|development` or `SWAGGER_ENABLED=true` |
-| Apigee-style URL paths | **Implemented** | Gateway nginx proxies `/auth/`, `/user/`, etc. |
+| Apigee-style URL paths | **Implemented** | Clients use `/auth/api/v1`, `/user/api/v1`, … via Apigee |
 | 2FA endpoint naming `verify-2fa` | **Implemented** | `POST /auth/verify-2fa` (not `verify-otp`) |
 | Governance smoke test script | **Implemented** | `scripts/verify-mobile-api.sh` |
 | Chat API under config service | **Implemented** | `docs/api/CHAT_API.md` |
@@ -181,7 +175,8 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 **Run governance verification:**
 
 ```bash
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-mobile-api.sh --apigee
 ./scripts/verify-localhost.sh
 ```
 
@@ -242,14 +237,16 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 1. Ubuntu 22.04 VM (specs above)
 2. Docker 24+ and Compose v2
 3. `.env` from `.env.example` with strong `JWT_SECRET`
-4. Firewall: expose **8090** (gateway) to Apigee or Cloudflare; restrict **3001–3005** to Apigee IP range
+4. Firewall: restrict **3001–3006** to Apigee IP range; optional **8081** for admin SPA
 
 ### Documents
 
 | Document | Path |
 |----------|------|
 | **DevOps guide (primary)** | `docs/devops/DEVOPS.md` |
-| Run demo server | `docs/deployment/pdf/02_RUN_DEMO_SERVER.md` |
+| New device setup | `docs/NEW_DEVICE_SETUP.md` |
+| Apigee wiring | `docs/deployment/APIGEE_CONNECTION.md` |
+| QA testing | `docs/deployment/TESTING.md` |
 | Deployment overview | `docs/deployment/DEPLOYMENT.md` |
 | Environment setup | `docs/deployment/ENVIRONMENT_SETUP.md` |
 | CI/CD | `docs/cicd/CI_CD.md` |
@@ -260,10 +257,9 @@ Full guide: [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](deployment/pdf/03_AP
 ```bash
 cp .env.example .env          # set JWT_SECRET, DEMO_HOST
 ./scripts/deploy-demo-server.sh <SERVER_IP>
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
-./scripts/start-demo-tunnel.sh    # optional public URL
 ./scripts/verify-backend.sh
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-mobile-api.sh --apigee
 ```
 
 ### CI/CD workflows (GitHub Actions)
@@ -279,14 +275,13 @@ ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 
 ### DevOps checklist
 
-- [ ] VM meets CPU/RAM/disk specs
 - [ ] Docker images build from `docker/Dockerfile.*`
-- [ ] Gateway **8090** serves `/app/`, `/login`, and API proxies
+- [ ] Backend ports **3001–3006** healthy
+- [ ] Apigee proxies wired to VM
 - [ ] `verify-backend.sh` passes
-- [ ] `verify-mobile-api.sh --gateway` passes
+- [ ] `verify-mobile-api.sh --apigee` passes
 - [ ] Firewall rules documented and applied
 - [ ] Secrets not committed; `JWT_SECRET` rotated for demo
-- [ ] Cloudflare tunnel or Apigee URL documented in `demo-public-url.txt`
 
 ---
 
@@ -315,10 +310,10 @@ See full checklist in [`docs/security/SECURITY.md`](security/SECURITY.md). Summa
 
 ```bash
 # Unauthenticated protected route → Orange 401
-curl -s http://127.0.0.1:8090/squad/api/v1/squads/stats | jq .
+curl -s http://127.0.0.1:3004/api/v1/squads/stats | jq .
 
 # Authenticated flow (governance script)
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
 ```
 
 ### Documents

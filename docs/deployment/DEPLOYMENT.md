@@ -1,173 +1,119 @@
 # my boss app — Deployment Guide
 
-> **Team handoff:** See [`docs/TEAM_REVIEW_GUIDE.md`](../TEAM_REVIEW_GUIDE.md) for technology versions, server specs, governance, security, and per-team checklists.
+> **DevOps (primary):** [`docs/devops/DEVOPS.md`](../devops/DEVOPS.md)  
+> **New machine:** [`docs/NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)  
+> **Team handoff:** [`docs/TEAM_REVIEW_GUIDE.md`](../TEAM_REVIEW_GUIDE.md)
 
-## Deployment guides
+---
 
-| Guide | Path |
-|-------|------|
-| **DevOps (primary)** | [`docs/devops/DEVOPS.md`](../devops/DEVOPS.md) |
-| Run demo server | [`docs/deployment/pdf/02_RUN_DEMO_SERVER.md`](pdf/02_RUN_DEMO_SERVER.md) |
-| Apigee | [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](pdf/03_APIGEE_CONNECTION.md) |
-| PDF export | [`docs/deployment/pdf/README.md`](pdf/README.md) |
+## Guides by topic
 
-## Deploy scripts (Docker demo server)
+| Topic | Document |
+|-------|----------|
+| VM install & deploy | [`devops/DEVOPS.md`](../devops/DEVOPS.md) |
+| Apigee proxy wiring | [`deployment/APIGEE_CONNECTION.md`](APIGEE_CONNECTION.md) |
+| Client API URLs | [`deployment/APIGEE_CLIENT_URLS.md`](APIGEE_CLIENT_URLS.md) |
+| Env + GitLab CI/CD variables | [`deployment/ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md) |
+| QA smoke tests | [`deployment/TESTING.md`](TESTING.md) |
+| Local dev (all apps) | [`deployment/ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) |
 
-From repo root:
+---
+
+## Deploy scripts (from `myboss-platform` root)
 
 ```bash
 chmod +x scripts/*.sh
+
+# Local or VM
 ./scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./scripts/verify-localhost.sh
+
+# Verify
+./scripts/verify-backend.sh
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-mobile-api.sh --apigee
+
+# Maintenance
+./scripts/reset-demo-data.sh
 ./scripts/stop-demo-server.sh
 ```
 
-**Documentation:** [`docs/api/API_OVERVIEW.md`](api/API_OVERVIEW.md), [`docs/api/CHAT_API.md`](api/CHAT_API.md)
-
 Docker files: `docker/` — see `docker/README.md`
 
-## Overview
+---
 
-The platform deploys three independent applications to four environments:
+## Environments
 
-| Environment | Purpose | Auto-deploy |
-|---|---|---|
-| Development | Local developer machines | No |
-| Demo | Stakeholder demos, integration testing | Yes (on merge to `develop`) |
-| UAT | User acceptance testing | Manual |
-| Production | Live system | Manual (approval required) |
+| Environment | API gateway | Backend | Auto-deploy |
+|-------------|-------------|---------|-------------|
+| Development | Direct ports `:3001–3006` | Local Docker or npm | No |
+| Demo | `https://api-demo.orange.com` | VM Docker | On merge (planned) |
+| UAT | Apigee UAT host | Staging infra | Manual |
+| Production | `https://api.orange.com` | Production infra | Manual + approval |
 
-## Deployment Architecture
+---
 
-```
-GitHub Actions CI/CD
-        │
-        ├── Build & Test (all apps)
-        ├── Generate artifacts
-        └── Deploy to target environment
-                │
-        ┌───────▼───────┐
-        │ Google Apigee │  (Production routing)
-        └───────┬───────┘
-                │
-    ┌───────────┼───────────┐
-    │           │           │
- Auth Svc    User Svc    Config Svc
-    │           │           │
-    └───────────┼───────────┘
-                │
-         MariaDB (myboss) / Redis
-```
-
-## Backend Deployment
-
-### Docker Images
-
-Each service builds an independent Docker image from **`docker/`**:
+## Backend (Docker)
 
 ```bash
-# From repo root — build all demo services
 docker compose -f docker/docker-compose.demo.yml up -d --build
-
-# Or build one service
-docker build -f docker/Dockerfile.auth -t myboss/auth-service:latest .
-docker build -f docker/Dockerfile.user -t myboss/user-service:latest .
-docker build -f docker/Dockerfile.config -t myboss/config-service:latest .
-docker build -f docker/Dockerfile.squad -t myboss/squad-service:latest .
-docker build -f docker/Dockerfile.survey -t myboss/survey-service:latest .
+docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 ```
 
-### Kubernetes (planned — not in platform repo yet)
+Six services: auth, user, config, squad, survey, notification — ports 3001–3006.
 
-Production K8s manifests are **planned**; demo uses Docker Compose from `myboss-platform/docker/`. When added, they will live in `myboss-platform/kubernetes/` or a dedicated ops repo.
+---
 
-<!--
-Legacy reference layout:
-```
-kubernetes/
-├── base/
-└── overlays/demo|uat|production
-```
--->
-
-## Admin Portal Deployment
-
-Static build deployed to web server or CDN:
+## Admin portal
 
 ```bash
 cd myboss-admin
-npm run build:demo    # or build:uat, build:production
-# Output: dist/ → deploy to hosting
+npm run build:apigee      # demo — https://api-demo.orange.com
+npm run build:production  # production CDN
 ```
 
-## Mobile App Deployment
+Output: `dist/` → CDN or Docker admin container (8081).
+
+---
+
+## Mobile app
 
 ```bash
 cd myboss-mobile
 
-# Android demo APK (physical device — probes LAN + tunnel at startup)
+# Apigee demo APK (recommended)
+./build-apigee-android.sh
+
+# Same Wi‑Fi LAN testing
 ./build-local-android.sh
 
-# External APK (mobile data — tunnel URL required in ../myboss-platform/demo-public-url.txt)
-./build-external-android.sh
-# Output: build/android-dist/myboss-demo-external.apk
-
-# iOS demo build (requires Xcode + Apple ID for device install)
-./build-demo-ios.sh --ipa
-
-# Mobile web for gateway /app/
-./build-demo-web.sh
-ALLOW_DEPLOY=1 ../../scripts/deploy-mobile-web.sh
+# iOS
+./build-ios-demo.sh
 ```
-
-Dart defines for demo builds:
 
 | Define | Purpose |
-|---|---|
-| `DEMO_MODE=true` | Probe gateway hosts at startup |
-| `GATEWAY_ORIGIN=http://<host>:8090` | Primary gateway URL |
-| `API_HOSTS=host1,host2` | Fallback hosts (LAN + tunnel) |
+|--------|---------|
+| `GATEWAY_ORIGIN=https://api-demo.orange.com` | Apigee demo |
+| `ENV=development` | Direct local ports |
+| `DEMO_MODE=true` | Auto-fill OTP in demo |
 
-See [`myboss-mobile/README.md`](../../myboss-mobile/README.md).
+---
 
-## Environment Variables
+## Secrets
 
-Never commit secrets. Use:
+Never commit `.env` or key files. Use GitLab CI/CD variables in pipelines — see [`ENV_AND_GITLAB_VARIABLES.md`](ENV_AND_GITLAB_VARIABLES.md).
 
-| Environment | Secret Management |
-|---|---|
-| Development | `.env` file (gitignored) |
-| Demo | CI/CD secrets / cloud secret manager |
-| UAT | Cloud secret manager |
-| Production | Cloud secret manager |
+---
 
-## Database Migrations
+## Health checks
 
 ```bash
-cd myboss-backend
-npm run migration:run -- --env=demo
-```
+# Local
+curl http://127.0.0.1:3001/api/v1/health
 
-## Health Check Verification
-
-After deployment, verify all services:
-
-```bash
-curl https://api-demo.example.com/auth/health
-curl https://api-demo.example.com/user/health
-curl https://api-demo.example.com/config/health
-```
-
-## Rollback
-
-Each deployment creates versioned artifacts. Rollback by redeploying the previous artifact version via CI/CD or Kubernetes rollout:
-
-```bash
-kubectl rollout undo deployment/auth-service
+# Apigee
+curl https://api-demo.orange.com/auth/api/v1/health
 ```
 
 ---
 
-*Specific infrastructure details (cloud provider, registry, hosting) to be configured once company infrastructure is confirmed.*
+*Orange — my boss app*

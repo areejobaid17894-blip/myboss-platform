@@ -1,7 +1,9 @@
 # DevOps & Infrastructure Guide
 
 **Audience:** DevOps, SRE, platform engineers  
-**Purpose:** Full technology stack, pinned versions, installation, deployment, and verification
+**Purpose:** Pinned versions, installation, deployment, verification, and Apigee wiring
+
+**Related:** [`deployment/APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md) · [`deployment/ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md) · [`NEW_DEVICE_SETUP.md`](../NEW_DEVICE_SETUP.md)
 
 ---
 
@@ -11,24 +13,13 @@
 
 | Component | Version | Where defined |
 |-----------|---------|---------------|
-| **Node.js** | **20 LTS** (`node:20-alpine`) | Dockerfiles, GitHub Actions |
-| **TypeScript (backend)** | **5.9.3** (lock) | `myboss-backend/package-lock.json` |
-| **TypeScript (admin)** | **5.7.3** (lock) | `myboss-admin/package-lock.json` |
-| **Flutter** | **3.35.7** | `myboss-mobile/pubspec.yaml`, `myboss-mobile/.fvmrc` |
+| **Node.js** | **20 LTS** (`node:20-alpine`) | Dockerfiles, CI |
+| **TypeScript (backend)** | **5.9.3** | `myboss-backend/package-lock.json` |
+| **TypeScript (admin)** | **5.7.3** | `myboss-admin/package-lock.json` |
+| **Flutter** | **3.35.7** | `myboss-mobile/pubspec.yaml`, `.fvmrc` |
 | **Dart** | **≥3.9.2 <4.0.0** | `myboss-mobile/pubspec.yaml` |
 
 ### Backend — NestJS 10 microservices
-
-| Package | Locked version |
-|---------|----------------|
-| @nestjs/common, @nestjs/core | 10.4.22 |
-| @nestjs/swagger | 7.4.2 |
-| @nestjs/jwt | 10.2.0 |
-| express | 4.22.1 |
-| jsonwebtoken | 9.0.2 |
-| class-validator | 0.14.4 |
-| swagger-ui-dist | 5.17.14 |
-| jest | 29.7.0 |
 
 | Service | Port | Apigee prefix | Health |
 |---------|------|---------------|--------|
@@ -37,47 +28,28 @@
 | config-service | 3003 | `/config/api/v1` | `/api/v1/health` |
 | squad-service | 3004 | `/squad/api/v1` | `/api/v1/health` |
 | survey-service | 3005 | `/survey/api/v1` | `/api/v1/health` |
+| notification-service | 3006 | `/notification/api/v1` | `/api/v1/health` |
 
-Shared library: `myboss-backend/libs/common` (Orange errors, JWT, Swagger, security headers).
+Shared library: `myboss-backend/libs/common`
 
 ### Admin portal
 
-| Package | Locked version |
-|---------|----------------|
-| React / react-dom | 19.2.8 |
-| Vite | 6.4.3 |
-| react-router-dom | 7.18.1 |
-| axios | 1.18.1 |
-| vitest | 3.2.7 |
+React 19 · Vite 6 · axios — builds with `npm run build:apigee` for demo/production.
 
-### Mobile (Flutter)
+### Mobile
 
-| Package | Locked version |
-|---------|----------------|
-| flutter_bloc | 9.1.1 |
-| dio | 5.10.0 |
-| go_router | 15.1.3 |
-| flutter_secure_storage | 9.2.4 |
-
-App version: **1.0.0+1**
+Flutter 3.35.7 · BLoC · app version **1.0.0+1**
 
 ### Docker images
 
 | Image | Tag | Usage |
 |-------|-----|--------|
 | node | 20-alpine | Backend service builds |
-| nginx | 1.27-alpine | API gateway (port **8090**) |
-| nginx | alpine | Admin portal container |
-| mariadb | 11.4 | Shared database (`myboss`) — optional via `with-mariadb` profile |
+| nginx | alpine | Admin SPA static files only (port **8081**) |
+| mariadb | 11.4 | Optional shared DB (`with-mariadb` profile) |
 | redis | 7-alpine | Optional local cache |
 
-### External tools (demo)
-
-| Tool | Notes |
-|------|-------|
-| Docker Compose | v2+ required |
-| cloudflared | Optional public tunnel (`start-demo-tunnel.sh`) |
-| FVM | Flutter version manager — `myboss-mobile/.fvmrc` |
+**There is no nginx API gateway.** Clients call **Orange Apigee**; Apigee routes to VM ports 3001–3006.
 
 ---
 
@@ -105,28 +77,35 @@ App version: **1.0.0+1**
 
 | Port | Service | Exposure |
 |------|---------|----------|
-| **8090** | API gateway — mobile `/app/`, admin `/login`, all API proxies | Public (Apigee / Cloudflare) |
-| 3001–3005 | Microservices | Apigee / internal only |
-| 8081 | Admin portal direct (optional) | Internal; prefer **8090/login** |
-| **3306** | MariaDB | Internal (when `DB_ENABLED=true`) |
-| 6379 | Redis | Internal (optional) |
-| 5173 | Vite dev server | Local development only |
+| **3001–3006** | Microservices | Apigee / internal only |
+| **8081** | Admin SPA (static) | Optional direct access |
+| **3306** | MariaDB | Internal (`DB_ENABLED=true`) |
+| **5173** | Vite dev | Local development only |
+
+Apigee terminates TLS publicly at `https://api-demo.orange.com`.
 
 ---
 
 ## 3. Architecture (deploy view)
 
 ```
-Mobile / Admin  →  nginx gateway :8090  →  Docker containers (3001–3005)
-                         │
-                         ├── /auth/   → auth-service
-                         ├── /user/   → user-service
-                         ├── /config/ → config-service (+ chat)
-                         ├── /squad/  → squad-service
-                         └── /survey/ → survey-service
+Mobile app / Admin SPA
+        │
+        ▼
+Orange Apigee  (https://api-demo.orange.com)
+        │
+        ▼
+Demo VM — Docker (ports 3001–3006)
+        │
+        ├── auth-service      :3001
+        ├── user-service      :3002
+        ├── config-service    :3003  (+ chat)
+        ├── squad-service     :3004
+        ├── survey-service    :3005
+        └── notification-service :3006
 ```
 
-Production target: same path structure behind **Orange Apigee** — see [`../deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md).
+Admin Docker container (8081) serves static files only — the SPA calls Apigee for APIs.
 
 ---
 
@@ -142,14 +121,18 @@ docker --version
 docker compose version
 ```
 
-Or use the repo script:
+### Clone all four repos
 
 ```bash
-git clone https://github.com/areejobaid17894-blip/myboss-backend.git /opt/myboss/myboss-backend
-git clone https://github.com/areejobaid17894-blip/myboss-admin.git /opt/myboss/myboss-admin
-git clone https://github.com/areejobaid17894-blip/myboss-mobile.git /opt/myboss/myboss-mobile
-git clone https://github.com/areejobaid17894-blip/myboss-platform.git /opt/myboss/myboss-platform
-cd /opt/myboss/myboss-platform
+sudo mkdir -p /opt/myboss && sudo chown $USER:$USER /opt/myboss
+cd /opt/myboss
+
+git clone https://github.com/areejobaid17894-blip/myboss-backend.git
+git clone https://github.com/areejobaid17894-blip/myboss-admin.git
+git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
+git clone https://github.com/areejobaid17894-blip/myboss-platform.git
+
+cd myboss-platform
 chmod +x scripts/*.sh
 ./scripts/install-demo-server.sh /opt/myboss
 ```
@@ -171,63 +154,45 @@ JWT_SECRET=<openssl rand -base64 48>
 INTERNAL_SERVICE_TOKEN=<openssl rand -base64 32>
 TWO_FA_DEMO_ENABLED=true
 CHAT_ENABLED=true
-DEMO_HOST=<server-ip>
+DEMO_ADMIN_PASSWORD=admin123
+DEMO_HOST=<server-public-ip>
 ```
 
-Never commit `.env`. Full variable list: [`.env.example`](../../.env.example).
+Full variable list: [`.env.example`](../../.env.example) · GitLab mapping: [`ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md)
 
 ---
 
 ## 5. Build & deploy (Docker Compose)
 
-### Start backend services
+### Deploy backend + admin
 
 ```bash
 cd /opt/myboss/myboss-platform
-./scripts/start-demo-server.sh
+./scripts/deploy-demo-server.sh <SERVER_PUBLIC_IP>
 ```
 
-Equivalent:
+Equivalent manual compose:
 
 ```bash
 docker compose -f docker/docker-compose.demo.yml up -d --build
 docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
 ```
 
-**With admin portal container:**
+**After deploy:**
 
-```bash
-docker compose -f docker/docker-compose.demo.yml \
-  --profile with-admin up -d --build admin-portal
-```
+| Component | URL |
+|-----------|-----|
+| Backend health | `http://<VM>:3001/api/v1/health` … `:3006` |
+| Admin (Docker) | `http://<VM>:8081` |
+| Apigee (clients) | `https://api-demo.orange.com` |
 
-### Deploy gateway + mobile web
+Wire Apigee proxies to `<VM_IP>:3001–3006` — see [`APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md).
 
-```bash
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
-```
-
-This serves:
-- Mobile web: `http://<host>:8090/app/`
-- Admin: `http://<host>:8090/login`
-- API proxies: `http://<host>:8090/{auth|user|config|squad|survey}/api/v1/...`
-
-### Optional public URL (Cloudflare tunnel)
-
-```bash
-./scripts/start-demo-tunnel.sh
-# URL written to demo-public-url.txt in myboss-platform
-```
-
-### Reset demo data (before team testing)
-
-In-memory stores mutate during QA. Restore seed squads, users, and terms state:
+### Reset demo data (before QA)
 
 ```bash
 ./scripts/reset-demo-data.sh
 ```
-
-Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad**. See [`../database/DATABASE.md`](../database/DATABASE.md) (demo vs DB-enabled modes).
 
 ---
 
@@ -235,22 +200,25 @@ Rebuilds **user-service** and **survey-service**, restarts **auth** and **squad*
 
 ```bash
 ./scripts/verify-backend.sh
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
+./scripts/verify-mobile-api.sh --apigee    # after Apigee is wired
 ./scripts/verify-localhost.sh
 
 docker compose -f docker/docker-compose.demo.yml ps
-curl -s http://127.0.0.1:8090/health
 ```
 
-### Swagger (via gateway)
+### Swagger (direct ports on VM)
 
 | Service | URL |
 |---------|-----|
-| Auth | http://127.0.0.1:8090/auth/api/v1/docs |
-| User | http://127.0.0.1:8090/user/api/v1/docs |
-| Config | http://127.0.0.1:8090/config/api/v1/docs |
-| Squad | http://127.0.0.1:8090/squad/api/v1/docs |
-| Survey | http://127.0.0.1:8090/survey/api/v1/docs |
+| Auth | http://127.0.0.1:3001/api/v1/docs |
+| User | http://127.0.0.1:3002/api/v1/docs |
+| Config | http://127.0.0.1:3003/api/v1/docs |
+| Squad | http://127.0.0.1:3004/api/v1/docs |
+| Survey | http://127.0.0.1:3005/api/v1/docs |
+| Notification | http://127.0.0.1:3006/api/v1/docs |
+
+QA guide: [`deployment/TESTING.md`](../deployment/TESTING.md)
 
 ---
 
@@ -258,10 +226,12 @@ curl -s http://127.0.0.1:8090/health
 
 ```bash
 sudo ufw allow OpenSSH
-sudo ufw allow 8090/tcp                    # gateway (or restrict to Apigee/CDN IPs)
-sudo ufw allow from <APIGEE_IP_RANGE> to any port 3001:3005 proto tcp
+sudo ufw allow from <APIGEE_IP_RANGE> to any port 3001:3006 proto tcp
+sudo ufw allow 8081/tcp   # optional — admin SPA direct access
 sudo ufw enable
 ```
+
+Do **not** expose 3001–3006 to the public internet — only Apigee should reach them.
 
 ---
 
@@ -272,14 +242,32 @@ sudo ufw enable
 ./scripts/stop-demo-server.sh
 
 # Update after git pull
-git pull
-./scripts/start-demo-server.sh
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
+cd /opt/myboss/myboss-platform && git pull
+cd ../myboss-backend && git pull
+cd ../myboss-admin && git pull
+./scripts/deploy-demo-server.sh <SERVER_IP>
 ```
 
 ---
 
-## 9. Docker file locations
+## 9. Platform scripts
+
+| Script | Purpose |
+|--------|---------|
+| `install-demo-server.sh [DIR]` | One-time VM Docker setup |
+| `deploy-demo-server.sh [HOST]` | Build & start backend + admin Docker |
+| `start-demo-server.sh` | Compose up only (no verify output) |
+| `stop-demo-server.sh` | Stop demo stack |
+| `reset-demo-data.sh` | Restore in-memory demo seed |
+| `verify-backend.sh` | Health checks :3001–3006 + push status |
+| `verify-mobile-api.sh [HOST]` | Mobile API governance (direct ports) |
+| `verify-mobile-api.sh --apigee` | Same checks through Apigee |
+| `verify-localhost.sh` | Full feature smoke test |
+| `fix-admin-login.sh` | Recreate auth if admin password fails |
+
+---
+
+## 10. Docker file locations
 
 ```
 docker/
@@ -288,53 +276,40 @@ docker/
 ├── Dockerfile.config
 ├── Dockerfile.squad
 ├── Dockerfile.survey
+├── Dockerfile.notification
 ├── Dockerfile.admin-portal
-├── docker-compose.demo.yml    ← demo backend (primary)
-├── docker-compose.yml         ← mariadb + redis only
-├── mariadb/init/              ← single `myboss` schema DDL
-├── nginx-api-gateway.conf
-├── nginx-admin.conf
-└── README.md
+├── docker-compose.demo.yml
+├── docker-compose.yml
+└── mariadb/init/
 ```
 
 ---
 
-## 10. CI/CD (GitHub Actions)
+## 11. CI/CD
 
-| Workflow | Path | Trigger |
-|----------|------|---------|
-| Backend CI | `myboss-backend/.gitlab-ci.yml` | Backend repo |
-| Admin CI | `myboss-admin/.gitlab-ci.yml` | Admin repo |
-| Mobile CI | `myboss-mobile/.gitlab-ci.yml` | Mobile repo |
-| Platform | `myboss-platform/.gitlab-ci.yml` | Docs / deploy scripts |
+| Repo | Pipeline file |
+|------|---------------|
+| Backend | `myboss-backend/.gitlab-ci.yml` |
+| Admin | `myboss-admin/.gitlab-ci.yml` |
+| Mobile | `myboss-mobile/.gitlab-ci.yml` |
+| Platform | `myboss-platform/.gitlab-ci.yml` |
 
-Deploy jobs are placeholders until wired to your registry/K8s. Details: [`../cicd/CI_CD.md`](../cicd/CI_CD.md).
+Details: [`../cicd/CI_CD.md`](../cicd/CI_CD.md) · Secrets: [`ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md)
 
 ---
 
-## 11. DevOps checklist
+## 12. DevOps checklist
 
 - [ ] VM meets CPU/RAM/disk specs (Ubuntu 22.04)
 - [ ] Docker 24+ and Compose v2 installed
-- [ ] `.env` created with strong `JWT_SECRET` and `INTERNAL_SERVICE_TOKEN`
-- [ ] `docker compose ... up -d --build` succeeds
-- [ ] Gateway **8090** serves `/app/`, `/login`, API proxies
-- [ ] `verify-backend.sh` and `verify-mobile-api.sh --gateway` pass
-- [ ] Firewall: 8090 public (or via CDN); 3001–3005 restricted
-- [ ] Apigee can reach backend (see Apigee guide)
+- [ ] All four repos cloned under `/opt/myboss`
+- [ ] `.env` with strong `JWT_SECRET` and `INTERNAL_SERVICE_TOKEN`
+- [ ] `deploy-demo-server.sh` succeeds; `verify-backend.sh` passes
+- [ ] Apigee proxies route to VM `:3001–3006`
+- [ ] `verify-mobile-api.sh --apigee` passes
+- [ ] Firewall: 3001–3006 restricted to Apigee; not public
+- [ ] Admin built with Apigee URLs (`build:apigee` / Docker default)
 - [ ] Secrets not committed to git
-
----
-
-## Related documentation
-
-| Document | Purpose |
-|----------|---------|
-| [`../security/SECURITY.md`](../security/SECURITY.md) | Security controls & hardening |
-| [`../database/DATABASE.md`](../database/DATABASE.md) | Database schema |
-| [`../deployment/DEPLOYMENT.md`](../deployment/DEPLOYMENT.md) | Environment matrix |
-| [`../deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md) | Apigee proxy setup |
-| [`../deployment/pdf/04_TESTING_GUIDE.md`](../deployment/pdf/04_TESTING_GUIDE.md) | QA verification |
 
 ---
 

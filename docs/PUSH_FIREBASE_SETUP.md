@@ -169,5 +169,5 @@ curl -H "Authorization: Bearer <admin-token>" \
 ## Related docs
 
 - [`architecture/GALLERY_NOTIFICATIONS.md`](architecture/GALLERY_NOTIFICATIONS.md) — in-app vs push design
-- [`deployment/DEMO_TUNNEL_AND_APK.md`](deployment/DEMO_TUNNEL_AND_APK.md) — external APK + tunnel
+- [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) — new machine + APK install
 - [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md) — notification + device-token endpoints

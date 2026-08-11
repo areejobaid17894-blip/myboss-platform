@@ -3,7 +3,6 @@
 set -euo pipefail
 
 BASE="${API_BASE:-http://localhost}"
-GATEWAY="${GATEWAY_BASE:-http://127.0.0.1:8090}"
 PORTS=(3001 3002 3003 3004 3005 3006)
 NAMES=(auth user config squad survey notification)
 FAILED=0
@@ -22,9 +21,7 @@ done
 
 echo ""
 echo "Push / FCM status:"
-if curl -sf "$GATEWAY/notification/api/v1/push/status" 2>/dev/null; then
-  echo ""
-elif curl -sf "$BASE:3006/api/v1/push/status" 2>/dev/null; then
+if curl -sf "$BASE:3006/api/v1/push/status" 2>/dev/null; then
   echo ""
 else
   echo "FAIL push/status"

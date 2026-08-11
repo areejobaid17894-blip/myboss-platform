@@ -97,8 +97,8 @@ Legend: ✅ Done · 🟡 Partial · ❌ Not yet · 🔒 Gated (no-squad)
 
 | Build | URL | UI version |
 |-------|-----|------------|
-| Local dev | `./myboss-mobile/run-local-web.sh` → `:8092` | Latest Flutter source |
-| Deployed demo | `ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh` | Same as `:8092` after deploy |
-| Android emulator | `fvm flutter run -d emulator-5554 …` | Latest |
+| Local dev | `./myboss-mobile/run-local-web.sh` | Latest Flutter source |
+| Apigee demo | `./build-apigee-android.sh` | Release APK |
+| Android emulator | `fvm flutter run …` | Latest |
 
 Reference files: `/Users/macbookair/Downloads/the_boss_app.html`, `/Users/macbookair/Downloads/v1 Platform employee journey Rev 1.0 July 2026.pptx.pdf`

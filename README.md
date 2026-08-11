@@ -6,19 +6,19 @@ Orchestration layer for **my boss app** — Docker Compose, deploy scripts, and 
 
 ---
 
-## What lives here
+## Start here
 
-| Area | Purpose |
-|------|---------|
-| `scripts/` | Deploy, verify, reset demo data, Cloudflare tunnel |
-| `docker/` | Compose stack, MariaDB init |
-| `docs/` | Architecture, DevOps, API notes, team guides |
+| Audience | Guide |
+|----------|-------|
+| **New laptop / phone** | [`docs/NEW_DEVICE_SETUP.md`](docs/NEW_DEVICE_SETUP.md) |
+| **DevOps / VM deploy** | [`docs/devops/DEVOPS.md`](docs/devops/DEVOPS.md) |
+| **Apigee team** | [`docs/deployment/APIGEE_CONNECTION.md`](docs/deployment/APIGEE_CONNECTION.md) |
+| **QA** | [`docs/deployment/TESTING.md`](docs/deployment/TESTING.md) |
+| **All docs** | [`docs/README.md`](docs/README.md) |
 
 ---
 
 ## Layout on your machine
-
-Keep all four projects side by side:
 
 ```
 myboss-repos/
@@ -28,7 +28,7 @@ myboss-repos/
 └── myboss-platform/    ← you are here
 ```
 
-If your folders are elsewhere, point scripts at them:
+Custom paths:
 
 ```bash
 export MYBOSS_BACKEND_DIR=/path/to/myboss-backend
@@ -40,12 +40,11 @@ export MYBOSS_MOBILE_DIR=/path/to/myboss-mobile
 
 ## Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Docker Desktop | 24+ with Compose v2 | Required for the full demo stack |
-| Node.js | 20 LTS | Optional — local backend dev without Docker |
-| Flutter | 3.35.7 | Mobile web and APK builds (see `myboss-mobile`) |
-| cloudflared | Latest | Optional — public demo URL for remote testers |
+| Tool | Version |
+|------|---------|
+| Docker Desktop | 24+ with Compose v2 |
+| Node.js | 20 LTS (admin Vite dev) |
+| Flutter | 3.35.7 via FVM (mobile) |
 
 ---
 
@@ -57,7 +56,7 @@ cp .env.example .env
 chmod +x scripts/*.sh
 ```
 
-Generate secrets and add them to `.env`:
+Set in `.env`:
 
 ```bash
 JWT_SECRET=$(openssl rand -base64 48)
@@ -65,122 +64,44 @@ INTERNAL_SERVICE_TOKEN=$(openssl rand -base64 32)
 DEMO_ADMIN_PASSWORD=admin123
 ```
 
-Optional: `DEMO_HOST`, `TAWK_PROPERTY_ID`.
-
-**New machine?** Follow [`docs/NEW_DEVICE_SETUP.md`](docs/NEW_DEVICE_SETUP.md) (install, `.env`, emulator, physical device).  
-Environment variables & GitLab CI/CD: [`docs/deployment/ENV_AND_GITLAB_VARIABLES.md`](docs/deployment/ENV_AND_GITLAB_VARIABLES.md).  
-Legacy checklist: [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md#new-machine-checklist).
+Env reference: [`docs/deployment/ENV_AND_GITLAB_VARIABLES.md`](docs/deployment/ENV_AND_GITLAB_VARIABLES.md)
 
 ---
 
 ## Run the demo locally
 
-**1. Start backend + admin (Docker)**
-
 ```bash
 ./scripts/deploy-demo-server.sh 127.0.0.1
-```
-
-**2. Open apps**
-
-| App | URL |
-|-----|-----|
-| Admin (Docker) | http://127.0.0.1:8081 |
-| Admin (Vite dev) | `cd ../myboss-admin && npm run dev` → http://127.0.0.1:5173 |
-| Apigee APIs | https://api-demo.orange.com |
-| Local Swagger | http://127.0.0.1:3001/api/v1/docs |
-
-**3. Smoke test**
-
-```bash
 ./scripts/verify-backend.sh
 ./scripts/verify-mobile-api.sh 127.0.0.1
 ```
 
-**Demo logins:** Admin `admin@orange.com` / `admin123` · Mobile `demo@orange.com` (OTP auto-fills in demo mode). Mobile users must accept Terms & Conditions after OTP.
+| App | URL |
+|-----|-----|
+| Admin (Vite — recommended) | `cd ../myboss-admin && npm run dev` → http://127.0.0.1:5173 |
+| Admin (Docker) | http://127.0.0.1:8081 |
+| Swagger (auth) | http://127.0.0.1:3001/api/v1/docs |
+| Apigee APIs | https://api-demo.orange.com |
 
-**Reset seed data** before a team session:
+**Logins:** Admin `admin@orange.com` / `admin123` · Mobile `demo@orange.com` (OTP auto-fills in demo)
 
 ```bash
-./scripts/reset-demo-data.sh
-```
-
-**Stop everything:**
-
-```bash
-./scripts/stop-demo-server.sh
-docker stop myboss-api-gateway 2>/dev/null || true
+./scripts/reset-demo-data.sh    # before team testing
+./scripts/stop-demo-server.sh # stop stack
 ```
 
 ---
 
 ## Demo server / VM deploy
 
-**One-time server prep** (Ubuntu 22.04+, Docker installed):
-
 ```bash
 ./scripts/install-demo-server.sh /opt/myboss
-```
-
-This places all four projects under `/opt/myboss/` as siblings.
-
-**Deploy:**
-
-```bash
 cd /opt/myboss/myboss-platform
 cp .env.example .env
-# Set JWT_SECRET, INTERNAL_SERVICE_TOKEN, DEMO_HOST=<public-ip>
-
 ./scripts/deploy-demo-server.sh <SERVER_IP>
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
-./scripts/verify-mobile-api.sh <SERVER_IP> --gateway
 ```
 
----
-
-## Public URL for remote testers
-
-With the gateway running on :8090:
-
-```bash
-./scripts/start-demo-tunnel.sh
-```
-
-The tunnel URL is written to `demo-public-url.txt`. Share:
-
-- Mobile: `https://<url>/app/`
-- Admin: `https://<url>/login`
-
-Quick tunnels die when `cloudflared` stops — keep the process running and your Mac awake. If testers see **Error 1033**, restart the script and share the **new** URL. Details: [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md)
-
----
-
-## Demo vs production gateway
-
-| | Demo (today) | Production (target) |
-|---|--------------|---------------------|
-| API gateway | nginx on `:8090` | Orange **Apigee** |
-| API paths | `/auth/api/v1`, `/user/api/v1`, … | Same paths |
-| Microservices | Docker `:3001–3006` | Internal only, behind Apigee |
-
-nginx mirrors Apigee routing so mobile and admin can be tested before Apigee is wired up. Production does **not** use nginx as the public gateway.
-
-→ [`docs/architecture/APIGEE_VS_NGINX.md`](docs/architecture/APIGEE_VS_NGINX.md)
-
----
-
-## External Android APK
-
-For testers on mobile data (outside your Wi‑Fi):
-
-```bash
-# 1. Tunnel running (see above)
-# 2. From myboss-mobile:
-./build-external-android.sh
-# → build/android-dist/myboss-demo-external.apk
-```
-
-→ [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md)
+Wire Apigee proxies to VM `:3001–3006`: [`docs/deployment/APIGEE_CONNECTION.md`](docs/deployment/APIGEE_CONNECTION.md)
 
 ---
 
@@ -189,45 +110,40 @@ For testers on mobile data (outside your Wi‑Fi):
 | Script | Purpose |
 |--------|---------|
 | `deploy-demo-server.sh [HOST]` | Backend + admin in Docker |
-| `deploy-mobile-web.sh` | Mobile web build + nginx gateway :8090 |
+| `start-demo-server.sh` | Compose up (no extra output) |
+| `stop-demo-server.sh` | Stop demo stack |
 | `reset-demo-data.sh` | Restore in-memory demo seed |
-| `start-demo-tunnel.sh` | Cloudflare public URL |
-| `stop-demo-server.sh` | Stop Docker demo stack |
-| `verify-backend.sh` | Health checks :3001–3006 + push status |
-| `verify-mobile-api.sh` | Gateway + mobile API smoke test |
+| `verify-backend.sh` | Health checks :3001–3006 |
+| `verify-mobile-api.sh [HOST]` | API governance (direct ports) |
+| `verify-mobile-api.sh --apigee` | API governance via Apigee |
+| `verify-localhost.sh` | Full feature smoke test |
+| `verify-orange-otp.sh` | SSO token smoke test (VPN required) |
 | `fix-admin-login.sh` | Recreate auth if admin password fails |
-| `install-demo-server.sh [DIR]` | One-time Docker setup on a VM |
+| `install-demo-server.sh [DIR]` | One-time VM Docker setup |
 
-Only `deploy-mobile-web.sh` requires `ALLOW_DEPLOY=1`.
+---
+
+## Mobile APK (external testers)
+
+```bash
+cd ../myboss-mobile
+./build-apigee-android.sh
+# → build/android-dist/myboss-apigee-api-demo.orange.com.apk
+```
+
+Same Wi‑Fi LAN testing: `./build-local-android.sh`
 
 ---
 
 ## Local configuration
 
-These files are created on your machine — copy from the `.example` templates where noted.
+| File | How |
+|------|-----|
+| `.env` | `cp .env.example .env` |
+| `secrets/fcm-service-account.json` | Firebase Console — never commit |
 
-| File | When you need it | How |
-|------|------------------|-----|
-| `.env` | Always (Docker deploy) | `cp .env.example .env` |
-| `demo-public-url.txt` | Public tunnel demos | `./scripts/start-demo-tunnel.sh` |
-| `demo-tunnel.log` | Auto | Written by tunnel script |
-| `docker/data/` | Auto | MariaDB volume when Docker runs with `mariadb` service |
-| `secrets/fcm-service-account.json` | Push notifications | Download from Firebase Console — never commit |
-
-**Push notifications:** See [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md).
+Push: [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md)
 
 ---
 
-## Documentation
-
-| Topic | Path |
-|-------|------|
-| Full stack setup (all four projects) | [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md) |
-| Docs index | [`docs/README.md`](docs/README.md) |
-| Apigee vs nginx | [`docs/architecture/APIGEE_VS_NGINX.md`](docs/architecture/APIGEE_VS_NGINX.md) |
-| Tunnel, Error 1033, external APK | [`docs/deployment/DEMO_TUNNEL_AND_APK.md`](docs/deployment/DEMO_TUNNEL_AND_APK.md) |
-| Push notifications (Firebase) | [`docs/PUSH_FIREBASE_SETUP.md`](docs/PUSH_FIREBASE_SETUP.md) |
-| DevOps / production deploy | [`docs/devops/DEVOPS.md`](docs/devops/DEVOPS.md) |
-| Environment setup | [`docs/deployment/ENVIRONMENT_SETUP.md`](docs/deployment/ENVIRONMENT_SETUP.md) |
-| Database & demo seed | [`docs/database/DATABASE.md`](docs/database/DATABASE.md) |
-| Team handoff | [`docs/TEAM_REVIEW_GUIDE.md`](docs/TEAM_REVIEW_GUIDE.md) |
+*Orange — my boss app*
