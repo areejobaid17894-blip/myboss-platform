@@ -1,34 +1,42 @@
 # Install & run — my boss app
 
-Single guide for developers and DevOps to run the full stack **locally** on one machine.
+Installation sheet for developers and DevOps. Run the full stack **locally** on one machine.
 
 Clients call **microservices directly** on ports **3001–3006**. No Apigee. No nginx API gateway.
 
 ---
 
-## 1. Required tools (pinned versions)
+## Prerequisites checklist
 
-| Tool | Version | Install |
-|------|---------|---------|
-| **Git** | 2.x+ | [git-scm.com](https://git-scm.com/) |
-| **Docker Desktop** | **24+** (Compose v2) | [docker.com](https://www.docker.com/products/docker-desktop/) |
-| **Node.js** | **20 LTS** | [nodejs.org](https://nodejs.org/) |
-| **Flutter** | **3.35.7** | `brew install fvm && fvm install 3.35.7` |
-| **Dart** | **≥3.9.2 <4.0.0** | Bundled with Flutter |
-| **Android Studio** | Latest | Only if running mobile emulator/APK |
+Install and verify before cloning:
 
-**Stack locked in repo:**
-
-| Component | Version |
-|-----------|---------|
-| NestJS | 10.4 |
-| TypeScript | 5.9.3 (backend + admin) |
-| React | 19 |
-| Vite | 6 |
+| Tool | Required version | Verify command | Install |
+|------|------------------|----------------|---------|
+| **Git** | 2.x+ | `git --version` | [git-scm.com](https://git-scm.com/) |
+| **Docker Desktop** | **24+** (Compose v2) | `docker --version && docker compose version` | [docker.com](https://www.docker.com/products/docker-desktop/) |
+| **Node.js** | **20 LTS** | `node --version` → v20.x | [nodejs.org](https://nodejs.org/) |
+| **npm** | 10+ (bundled with Node 20) | `npm --version` | — |
+| **Flutter** | **3.35.7** | `fvm flutter --version` | `brew install fvm && fvm install 3.35.7` |
+| **Android Studio** | Latest | — | Only for mobile emulator/APK |
 
 ---
 
-## 2. Clone all four repos
+## Pinned stack versions
+
+| Component | Version | Repo |
+|-----------|---------|------|
+| **Node.js** | 20 LTS | backend, admin, Docker |
+| **TypeScript** | **5.9.3** | backend + admin (same version) |
+| **NestJS** | 10.4 | myboss-backend |
+| **React** | 19 | myboss-admin |
+| **Vite** | 6 | myboss-admin |
+| **Flutter** | 3.35.7 | myboss-mobile |
+| **Dart** | ≥3.9.2 <4.0.0 | myboss-mobile |
+| **Docker Compose** | v2 | myboss-platform |
+
+---
+
+## Step 1 — Clone all four repos
 
 Repos must be **sibling folders**:
 
@@ -51,7 +59,7 @@ myboss-repos/
 
 ---
 
-## 3. Configure environment
+## Step 2 — Configure environment
 
 ```bash
 cd ~/myboss-repos/myboss-platform
@@ -72,7 +80,7 @@ Full variable list: [`.env.example`](../.env.example)
 
 ---
 
-## 4. Deploy (Docker)
+## Step 3 — Deploy with Docker
 
 ```bash
 cd ~/myboss-repos/myboss-platform
@@ -85,40 +93,48 @@ cd ~/myboss-repos/myboss-platform
 
 ---
 
-## 5. Local URLs
+## Step 4 — Open apps (local URLs)
 
-| App | URL |
-|-----|-----|
-| **Admin (Docker)** | http://127.0.0.1:8081/login |
-| **Admin (Vite dev)** | http://127.0.0.1:5173 — see §6 |
-| **Employee web** | http://127.0.0.1:8092 — see §8 |
-| **Auth Swagger** | http://127.0.0.1:3001/api/v1/docs |
-| **User Swagger** | http://127.0.0.1:3002/api/v1/docs |
-| **Config Swagger** | http://127.0.0.1:3003/api/v1/docs |
-| **Squad Swagger** | http://127.0.0.1:3004/api/v1/docs |
-| **Survey Swagger** | http://127.0.0.1:3005/api/v1/docs |
-| **Notification Swagger** | http://127.0.0.1:3006/api/v1/docs |
+| App | URL | Login |
+|-----|-----|-------|
+| **Admin (Docker)** | http://127.0.0.1:8081/login | `admin@orange.com` / `admin123` |
+| **Admin (Vite dev)** | http://127.0.0.1:5173 | same — see Step 5 |
+| **Employee web** | http://127.0.0.1:8092 | `demo@orange.com` + OTP — see Step 7 |
+| **Auth Swagger** | http://127.0.0.1:3001/api/v1/docs | — |
 
-**API base URLs:** `http://127.0.0.1:3001/api/v1` … `http://127.0.0.1:3006/api/v1`
+**All API bases:** `http://127.0.0.1:3001/api/v1` … `http://127.0.0.1:3006/api/v1`
+
+| Service | Swagger |
+|---------|---------|
+| auth | http://127.0.0.1:3001/api/v1/docs |
+| user | http://127.0.0.1:3002/api/v1/docs |
+| config | http://127.0.0.1:3003/api/v1/docs |
+| squad | http://127.0.0.1:3004/api/v1/docs |
+| survey | http://127.0.0.1:3005/api/v1/docs |
+| notification | http://127.0.0.1:3006/api/v1/docs |
+
+OTP auto-fills in demo mode.
 
 ---
 
-## 6. Admin portal (Vite dev — optional)
+## Step 5 — Admin portal (Vite dev — optional)
 
-Use when editing admin UI with hot reload:
+For UI development with hot reload:
 
 ```bash
 cd ~/myboss-repos/myboss-admin
 cp .env.example .env.development
-npm install
+npm install          # uses TypeScript 5.9.3
 npm run dev
 ```
 
 Open http://127.0.0.1:5173 — APIs call `localhost:3001–3005`.
 
+Backend Docker (Step 3) must still be running.
+
 ---
 
-## 7. Mobile app — emulator
+## Step 6 — Mobile app (emulator)
 
 ```bash
 cd ~/myboss-repos/myboss-mobile
@@ -131,27 +147,18 @@ Android emulator reaches the host via `10.0.2.2` automatically.
 
 ---
 
-## 8. Employee web app — browser
+## Step 7 — Employee web app (browser)
 
 ```bash
 cd ~/myboss-repos/myboss-mobile
 ./run-local-web.sh
 ```
 
-Open http://127.0.0.1:8092
+Open http://127.0.0.1:8092 — login `demo@orange.com`.
 
 ---
 
-## 9. Logins (demo)
-
-| App | Email | Password / OTP |
-|-----|-------|----------------|
-| Admin | `admin@orange.com` | `admin123` → OTP auto-fills |
-| Employee | `demo@orange.com` | OTP auto-fills in demo mode |
-
----
-
-## 10. Useful scripts
+## Platform scripts
 
 Run from `myboss-platform/`:
 
@@ -166,22 +173,23 @@ Run from `myboss-platform/`:
 
 ---
 
-## 11. Troubleshooting
+## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Admin shows "Network error" | Rebuild admin: `./scripts/deploy-demo-server.sh 127.0.0.1` (sets `DEMO_HOST=127.0.0.1`) |
+| Admin shows "Network error" | Re-run `./scripts/deploy-demo-server.sh 127.0.0.1` |
 | Port already in use | `./scripts/stop-demo-server.sh` then redeploy |
 | Mobile can't reach API | Backend must be running; use `ENV=development` on emulator |
 | Admin login fails | `./scripts/fix-admin-login.sh` |
+| Docker not running | Start Docker Desktop, wait until ready, redeploy |
 
 ---
 
 ## DevOps / VM
 
-For server install (Ubuntu 22.04, firewall, CI/CD): [`devops/DEVOPS.md`](devops/DEVOPS.md)
+Server install (Ubuntu 22.04, CI/CD): [`devops/DEVOPS.md`](devops/DEVOPS.md)
 
-For QA verification: [`deployment/TESTING.md`](deployment/TESTING.md)
+QA smoke tests: [`deployment/TESTING.md`](deployment/TESTING.md)
 
 ---
 

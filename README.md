@@ -4,9 +4,9 @@ Docker Compose, deploy scripts, and documentation for **my boss app**.
 
 ---
 
-## Install & run (start here)
+## Install & run
 
-**[docs/INSTALL.md](docs/INSTALL.md)** — clone, configure, deploy, open all apps locally.
+**[docs/INSTALL.md](docs/INSTALL.md)** — full installation sheet (tools, clone, deploy, URLs, logins)
 
 **DevOps / VM:** [docs/devops/DEVOPS.md](docs/devops/DEVOPS.md)
 
@@ -43,7 +43,15 @@ cp .env.example .env && chmod +x scripts/*.sh
 
 ## Versions
 
-Node **20 LTS** · NestJS **10.4** · React **19** · Vite **6** · Flutter **3.35.7**
+| Component | Version |
+|-----------|---------|
+| Node.js | 20 LTS |
+| TypeScript | **5.9.3** (backend + admin) |
+| NestJS | 10.4 |
+| React | 19 |
+| Vite | 6 |
+| Flutter | 3.35.7 |
+| Docker | 24+ |
 
 ---
 
