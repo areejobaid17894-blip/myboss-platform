@@ -10,8 +10,7 @@
 | Component | Version | Where defined |
 |-----------|---------|---------------|
 | **Node.js** | **20 LTS** (`node:20-alpine`) | Dockerfiles, CI |
-| **TypeScript (backend)** | **5.9.3** | `myboss-backend/package-lock.json` |
-| **TypeScript (admin)** | **5.7.3** | `myboss-admin/package-lock.json` |
+| **TypeScript** | **5.9.3** | `myboss-backend` and `myboss-admin` `package-lock.json` |
 | **NestJS** | **10.4** | `myboss-backend/package-lock.json` |
 | **React** | **19** | `myboss-admin/package-lock.json` |
 | **Vite** | **6** | `myboss-admin/package-lock.json` |

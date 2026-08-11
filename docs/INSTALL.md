@@ -22,8 +22,7 @@ Clients call **microservices directly** on ports **3001–3006**. No Apigee. No 
 | Component | Version |
 |-----------|---------|
 | NestJS | 10.4 |
-| TypeScript (backend) | 5.9.3 |
-| TypeScript (admin) | 5.7.3 |
+| TypeScript | 5.9.3 (backend + admin) |
 | React | 19 |
 | Vite | 6 |
 
