@@ -2,7 +2,7 @@
 
 Orchestration layer for **my boss app** — Docker Compose, deploy scripts, and project documentation.
 
-**Client apps (mobile + admin) use Orange Apigee** for REST APIs. nginx `:8090` in this repo is **local development only** — see [`docs/deployment/APIGEE_CLIENT_URLS.md`](docs/deployment/APIGEE_CLIENT_URLS.md).
+**Client apps use Orange Apigee** for REST APIs. There is **no local nginx API gateway** — backend runs on direct Docker ports locally.
 
 ---
 
@@ -11,7 +11,7 @@ Orchestration layer for **my boss app** — Docker Compose, deploy scripts, and 
 | Area | Purpose |
 |------|---------|
 | `scripts/` | Deploy, verify, reset demo data, Cloudflare tunnel |
-| `docker/` | Compose stack, nginx gateway config, MariaDB init |
+| `docker/` | Compose stack, MariaDB init |
 | `docs/` | Architecture, DevOps, API notes, team guides |
 
 ---
@@ -73,40 +73,29 @@ Legacy checklist: [`docs/MULTI_REPO_SETUP.md`](docs/MULTI_REPO_SETUP.md#new-mach
 
 ---
 
-## Run the full demo locally
+## Run the demo locally
 
-This is the fastest way to see everything working — backend, admin, and mobile web behind a single gateway.
-
-**1. Start backend and admin (Docker)**
+**1. Start backend + admin (Docker)**
 
 ```bash
 ./scripts/deploy-demo-server.sh 127.0.0.1
 ```
 
-Brings up six NestJS services (3001–3006) and the admin container (8081). First build takes ~30 seconds.
+**2. Open apps**
 
-**2. Build mobile web and start the gateway**
-
-```bash
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
-```
-
-Compiles Flutter web from `../myboss-mobile` and serves it through nginx on **8090**.
+| App | URL |
+|-----|-----|
+| Admin (Docker) | http://127.0.0.1:8081 |
+| Admin (Vite dev) | `cd ../myboss-admin && npm run dev` → http://127.0.0.1:5173 |
+| Apigee APIs | https://api-demo.orange.com |
+| Local Swagger | http://127.0.0.1:3001/api/v1/docs |
 
 **3. Smoke test**
 
 ```bash
 ./scripts/verify-backend.sh
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
+./scripts/verify-mobile-api.sh 127.0.0.1
 ```
-
-| URL | What |
-|-----|------|
-| http://127.0.0.1:8090/app/ | Mobile web |
-| http://127.0.0.1:8090/login | Admin console |
-| http://127.0.0.1:8090/health | Gateway health |
-| http://127.0.0.1:8090/auth/api/v1/docs | Swagger (auth) |
-| http://127.0.0.1:8090/notification/api/v1/push/status | FCM status (dry-run vs live) |
 
 **Demo logins:** Admin `admin@orange.com` / `admin123` · Mobile `demo@orange.com` (OTP auto-fills in demo mode). Mobile users must accept Terms & Conditions after OTP.
 

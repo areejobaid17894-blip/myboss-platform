@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop my boss app demo Docker stack
+# Stop my boss app demo Docker stack (no nginx gateway).
 set -euo pipefail
 
 PLATFORM_DIR="$(cd "$(dirname "$0")/.." && pwd)"

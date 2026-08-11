@@ -2,7 +2,7 @@
 
 Use this guide when you set up a **new laptop** or install the app on a **new phone/tablet**.
 
-The product spans **four Git repos**. Clone them as siblings, configure one platform `.env`, then run the demo stack on port **8090**.
+The product spans **four Git repos**. Clone them as siblings, configure platform `.env`, start Docker backend, and connect clients to **Orange Apigee** (or direct ports for local dev). There is **no local nginx gateway**.
 
 ---
 
@@ -10,7 +10,7 @@ The product spans **four Git repos**. Clone them as siblings, configure one plat
 
 | Goal | Steps | Time |
 |------|-------|------|
-| Browser demo (admin + mobile web) | [§1 Install tools](#1-install-tools) → [§2 Clone repos](#2-clone-all-four-repos) → [§3 Configure `.env`](#3-configure-environment) → [§4 Start stack](#4-start-the-full-demo-stack) | ~20 min first time |
+| Browser demo (admin) | [§1–§3](#1-install-tools) → [§4 Start stack](#4-start-the-backend-stack) → admin `npm run dev` or `:8081` | ~15 min |
 | Flutter on emulator | Above + [§5 Emulator](#5-run-on-android-emulator) | +5 min |
 | APK on physical phone | Above + [§6 Physical device](#6-run-on-a-physical-android-device) | +10 min |
 
@@ -119,29 +119,27 @@ Future CI/CD: these values will move to **GitLab CI/CD variables** — see [`dep
 
 ---
 
-## 4. Start the full demo stack
+## 4. Start the backend stack
 
 From `myboss-platform`:
 
 ```bash
 ./scripts/deploy-demo-server.sh 127.0.0.1
-ALLOW_DEPLOY=1 ./scripts/deploy-mobile-web.sh
 ./scripts/verify-backend.sh
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
 ```
 
-First Docker build can take 2–5 minutes.
+First Docker build can take 2–5 minutes. Services listen on **direct ports** `:3001–3006` (no nginx).
 
-| URL | App |
-|-----|-----|
-| http://127.0.0.1:8090/app/ | Mobile web |
-| http://127.0.0.1:8090/login | Admin portal |
-| http://127.0.0.1:8090/health | Gateway health |
-| http://127.0.0.1:8090/auth/api/v1/docs | Swagger (auth) |
+| What | URL |
+|------|-----|
+| Admin (Docker) | http://127.0.0.1:8081 |
+| Admin (Vite dev) | http://127.0.0.1:5173 — `cd ../myboss-admin && npm run dev` |
+| Apigee APIs | https://api-demo.orange.com/auth/api/v1/... |
+| Auth Swagger (local) | http://127.0.0.1:3001/api/v1/docs |
 
 **Admin login:** `admin@orange.com` / `admin123` → OTP (auto-fills in demo)
 
-**Mobile login:** `demo@orange.com` → OTP → accept Terms & Conditions
+**Mobile login:** use Apigee — `demo@orange.com` → OTP → accept Terms & Conditions
 
 Reset demo data before a team session:
 
@@ -153,14 +151,13 @@ Stop everything:
 
 ```bash
 ./scripts/stop-demo-server.sh
-docker stop myboss-api-gateway 2>/dev/null || true
 ```
 
 ---
 
 ## 5. Run on Android emulator
 
-**Prerequisite:** §4 stack running (gateway on `:8090`).
+**Option A — Apigee (recommended):**
 
 ```bash
 cd ~/myboss-repos/myboss-mobile
@@ -168,14 +165,18 @@ fvm use 3.35.7
 fvm flutter pub get
 fvm flutter gen-l10n
 
-# Emulator reaches host Mac via 10.0.2.2
 fvm flutter run \
-  --dart-define=DEMO_MODE=true \
-  --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090
+  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
+  --dart-define=ENV=demo \
+  --dart-define=DEMO_MODE=true
 ```
 
-In Android Studio: open `myboss-mobile`, set run args to  
-`--dart-define=DEMO_MODE=true --dart-define=GATEWAY_ORIGIN=http://10.0.2.2:8090`
+**Option B — Local backend (direct ports, backend Docker running):**
+
+```bash
+fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
+# Emulator uses 10.0.2.2 for host machine ports :3001–3005
+```
 
 More detail: [`mobile/ANDROID_STUDIO.md`](mobile/ANDROID_STUDIO.md)
 

@@ -127,20 +127,11 @@ Default baked-in hosts (when no `--dart-define`):
 
 ---
 
-## Legacy nginx gateway (local only)
+## Legacy nginx gateway (removed)
 
-Use only for **full-stack development on one machine**:
+The former `nginx-api-gateway.conf` on port **8090** has been removed. Do not use `deploy-mobile-web.sh` — it prints a deprecation message.
 
-| URL | Purpose |
-|-----|---------|
-| `http://127.0.0.1:8090` | Local nginx — same path prefixes as Apigee |
-| Cloudflare tunnel | Temporary external access to nginx (deprecated for new APK builds) |
-
-Do **not** ship new APKs or admin builds with nginx/tunnel URLs unless Apigee is unavailable.
-
-Legacy admin build: `npm run build:local-demo` (relative `/auth/api/v1` paths).
-
-Legacy mobile: `USE_NGINX_TUNNEL=true ./build-external-android.sh`
+Use **Apigee** for client API traffic or **direct ports** `:3001–3006` for local backend testing.
 
 ---
 
