@@ -19,41 +19,27 @@ flowchart TB
         AP[Admin Portal<br/>React Web]
     end
 
-    subgraph Backend["Backend — NestJS Microservices"]
-        AUTH[Auth Service]
-        USER[User Service]
-        CONFIG[Config Service]
-        SQUAD[Squad Service]
-        SURVEY[Survey Service]
+    subgraph Backend["Backend — one NestJS API (:3001)"]
+        API[myboss-api<br/>auth · users · config · squads · surveys · gallery · push]
     end
 
     subgraph Data
-        DB[(MariaDB — myboss)]
+        DB[(MySQL 8 — my_boss)]
     end
 
     subgraph External
+        OTP[Orange SSO + Maxit]
         PBI[Power BI]
     end
 
-    MA --> AUTH
-    MA --> USER
-    MA --> CONFIG
-    MA --> SQUAD
-    MA --> SURVEY
-
-    AP --> AUTH
-    AP --> USER
-    AP --> CONFIG
-    AP --> SURVEY
-
-    AUTH --> DB
-    USER --> DB
-    CONFIG --> DB
-    SQUAD --> DB
-    SURVEY --> DB
-
-    PBI -->|CSV / JSON export| SURVEY
+    MA --> API
+    AP --> API
+    API --> DB
+    API --> OTP
+    PBI -->|CSV / JSON export| API
 ```
+
+Runtime: **one employee API** (`myboss-api` :3001) and **one admin UI** (`myboss-admin` :8081). Stages: [`../deployment/STAGES.md`](../deployment/STAGES.md).
 
 ---
 
@@ -63,36 +49,37 @@ flowchart TB
 |-------|------------|-------------|
 | **Mobile app** | Flutter (Android) | Employees |
 | **Admin portal** | React + Vite | Admins |
-| **Backend** | NestJS (5 microservices) | Both apps |
-| **Database** | MariaDB 11 — single shared `myboss` database | All backend services |
+| **Backend** | One NestJS process (`myboss-api`) | Both apps |
+| **Database** | MySQL 8 — `my_boss` on `10.1.165.105:3308` for development and production; dedicated DB for preprod (staging) | API |
 | **Analytics** | CSV/JSON export APIs | Power BI / Admin |
 
 ---
 
-## 4. Backend services
+## 4. Backend modules (one process)
 
-| Service | Main job |
-|---------|----------|
+| Module | Main job |
+|--------|----------|
 | **Auth** | Login, 2FA OTP, JWT tokens |
-| **User** | Employee profiles and accounts |
-| **Config** | Squad limits, buildings, app settings, **live chat config (Apigee)** |
-| **Squad** | Create/join squads, members, leaders |
-| **Survey** | Surveys, responses, gallery, notifications, reports, Power BI export |
+| **Users** | Employee profiles and accounts |
+| **Config** | Squad limits, buildings, app settings, live chat |
+| **Squads** | Create/join squads, members, leaders, invitations (pending invites reserve seats) |
+| **Surveys** | Surveys, responses, gallery, notifications, reports, Power BI export |
+| **Push** | FCM dispatch |
 
 ---
 
-## 5. MariaDB — what is stored
+## 5. MySQL — what is stored
 
-All microservices connect to **one database** (`MARIADB_DATABASE=myboss`). No duplicate user or squad snapshot columns — see [`../database/DATABASE.md`](../database/DATABASE.md).
+All stages use **one database** (`MYSQL_DATABASE=my_boss` on `10.1.165.105:3308`). See [`../database/DATABASE.md`](../database/DATABASE.md).
 
 | Domain | Examples |
 |--------|----------|
 | **Auth & users** | Single `users` table (eligibility + profile), OTP sessions |
 | **Config** | Buildings, app settings, squad limits |
-| **Squads** | Squads, members, join requests |
+| **Squads** | Squads, members, join requests and invitations (deleted when the user joins) |
 | **Surveys** | Survey schemas, responses, gallery, notifications, analytics |
 
-> **Note:** Demo defaults to in-memory data (`DB_ENABLED=false`). Enable MariaDB with `DB_ENABLED=true` for persistent, report-ready data.
+`DB_ENABLED=true` and `DB_SYNCHRONIZE=false` on the shared corporate DB.
 
 ---
 
@@ -111,7 +98,7 @@ flowchart LR
 
 ---
 
-## 7. Admin flow (Web — V2 Console)
+## 7. Admin flow (Web)
 
 ```mermaid
 flowchart LR
@@ -122,9 +109,9 @@ flowchart LR
     E --> F[Export to Power BI]
 ```
 
-**Main sections (V2):** Overview · Statistics · Squads · Destinations · Unregistered · Notifications · Extraction · Surveys · Photos · Vests · Audit
+**Main sections:** Overview · Statistics · Squads · Destinations · Unregistered · Notifications · Extraction · Surveys · Photos · Vests · Audit
 
-**Entry URL:** `http://<gateway>:8090/login` or public tunnel `/login`
+**Entry URL:** `http://<DEMO_HOST>:8081/login`
 
 ---
 
@@ -133,17 +120,17 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant E as Employee App
-    participant S as Survey Service
-    participant D as MariaDB (myboss)
-    participant A as Admin Portal
+    participant A as myboss-api :3001
+    participant D as MySQL (my_boss)
     participant P as Power BI
 
-    E->>S: Submit survey answers
-    S->>D: Save response
-    A->>S: GET reports / analytics
-    S->>D: Read aggregated data
-    A->>S: Download CSV
-    P->>S: Import CSV
+    E->>A: GET /surveys/catalog + /surveys/active/:segment (online Home)
+    Note over E: Cache schemas + last squad on device
+    E->>E: Open / fill service offline; close saves draft
+    E->>A: POST /responses (online, or flush queued draft)
+    A->>D: Save response
+    A->>D: Read aggregated data
+    A->>P: CSV / JSON export
 ```
 
 ---
@@ -156,31 +143,33 @@ sequenceDiagram
 | **Admin** | Email + password + OTP |
 | **API** | JWT bearer token on requests |
 
+OTP: development and production use **production Maxit** (`10.4.3.27`). Preprod uses preprod SSO/email APIs. Same MySQL for all three.
+
 ---
 
-## 10. Deployment view (development)
+## 10. Deployment view
 
 ```mermaid
 flowchart LR
-    DEV[Developer Machine]
-    DEV --> BE[Backend Services]
-    DEV --> EMU[Android Emulator]
-    DEV --> WEB[Admin Portal Browser]
-    BE --> DB[(MariaDB myboss)]
-
-    EMU --> BE
-    WEB --> BE
+    HOST[API + admin host]
+    HOST --> API[myboss-api :3001]
+    HOST --> ADMIN[myboss-admin :8081]
+    API --> DB[(MySQL my_boss)]
+    PHONE[Employee phone] --> API
+    BROWSER[Admin browser] --> ADMIN
+    ADMIN --> API
 ```
 
 ---
 
 ## 11. One-line summary
 
-> **Flutter mobile app for employees + React admin portal + NestJS microservices + MariaDB (`myboss`)**, centered on **squads, dynamic surveys, and Power BI-ready analytics**.
+> **Flutter employee app + React admin portal + one NestJS API + shared MySQL (`my_boss`)**, centered on **squads, dynamic surveys, and Power BI-ready analytics**.
 
 ---
 
 ## Related docs
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — detailed architecture
+- [../deployment/STAGES.md](../deployment/STAGES.md) — development / preprod / production
 - [../deployment/](../deployment/) — deployment guides

@@ -4,7 +4,7 @@
 
 | Layer | Implementation |
 |-------|----------------|
-| Source of truth | `survey-service` — `POST /notifications`, MariaDB target (`myboss`) |
+| Source of truth | `myboss-api` — `POST /notifications`, MySQL `my_boss` |
 | Employee delivery | **In-app only** — Home unread banner + Gallery announcement cards |
 | Admin compose | Admin portal → `POST /notifications` |
 | Employee uploads | `POST /gallery` (`source=employee`) → admin Photos |
@@ -22,7 +22,7 @@ Unified model: [`GALLERY_NOTIFICATIONS.md`](./GALLERY_NOTIFICATIONS.md)
 Admin portal
     POST /notifications
          ↓
-survey-service (MariaDB `myboss`: notifications + gallery_items)
+myboss-api (MySQL `my_boss`: notifications + gallery_items)
          ↓
 push-worker (new job / Lambda / sidecar)
          ↓
@@ -46,7 +46,7 @@ Keep **`POST /notifications`** as the single admin API. Add push delivery as a w
 | **OneSignal** | Fast setup, dashboard | Third-party | Free tier often sufficient |
 | **In-app only (no push)** | Already built | No lock-screen alerts | **$0** — weak for field use |
 
-**Recommendation:** Use **survey-service + in-app feed** (already done) plus **FCM + APNs** for OS push. Choose Firebase SDK vs direct HTTP based on Orange cloud policy.
+**Recommendation:** Use **myboss-api + in-app feed** (already done) plus **FCM + APNs** for OS push. Choose Firebase SDK vs direct HTTP based on Orange cloud policy.
 
 ---
 

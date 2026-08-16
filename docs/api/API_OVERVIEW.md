@@ -8,37 +8,39 @@
 |---|---|
 | [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md) | Orange governance, errors, roles |
 | [`CHAT_API.md`](CHAT_API.md) | Native squad chat — endpoints, auth, mobile flow, curl examples |
-| [`../deployment/SERVICE_URLS.md`](../deployment/SERVICE_URLS.md) | Direct port URLs (local + deployed) |
+| [`SQUADS.md`](SQUADS.md) | Join, invitations (seat reservation), admin manage |
+| [`../deployment/ORANGE_OTP_SETUP.md`](../deployment/ORANGE_OTP_SETUP.md) | Orange SSO + Maxit email (internal OTP) |
 | [`../deployment/TESTING.md`](../deployment/TESTING.md) | QA checklist + Swagger links |
 
 ## Base URLs
 
+One NestJS process serves every former microservice.
+
 | Environment | Pattern | Example |
 |---|---|---|
-| Development (local) | `http://localhost:{port}/api/v1` | Auth `:3001` … Notification `:3006` |
-| Demo / deployed VM | `http://<SERVER_IP>:{port}/api/v1` | `http://213.139.63.204:3001/api/v1/auth/sign-in` |
+| Development (local) | `http://127.0.0.1:3001/api/v1` | `http://127.0.0.1:3001/api/v1/auth/sign-in` |
+| Demo / deployed VM | `http://<SERVER_IP>:3001/api/v1` | `http://<HOST>:3001/api/v1/auth/sign-in` |
 
 ## Swagger documentation
 
-Each service exposes OpenAPI (Swagger UI) when `APP_ENV=development|demo` or `SWAGGER_ENABLED=true`:
+OpenAPI when `APP_ENV=development|demo` or `SWAGGER_ENABLED=true`:
 
-| Service | Swagger URL |
+| | URL |
 |---|---|
-| Auth | http://localhost:3001/api/v1/docs |
-| User | http://localhost:3002/api/v1/docs |
-| Config | http://localhost:3003/api/v1/docs |
-| Squad | http://localhost:3004/api/v1/docs |
-| Survey | http://localhost:3005/api/v1/docs |
-| Notification | http://localhost:3006/api/v1/docs |
+| Health | http://127.0.0.1:3001/api/v1/health |
+| Swagger UI | http://127.0.0.1:3001/docs |
 
 ## Service ports
 
-Each service listens on its own port — see [`SERVICE_URLS.md`](../deployment/SERVICE_URLS.md).
+| Port | Service |
+|------|---------|
+| 3001 | Single API (auth, users, config, squads, surveys, gallery, notifications, push) |
+| 8081 | Admin UI (Docker) |
 
 ## Verification
 
 ```bash
-./scripts/verify-mobile-api.sh 127.0.0.1
+curl http://127.0.0.1:3001/api/v1/health
 ```
 
 ## Authentication classification
@@ -78,7 +80,7 @@ All services return errors in Orange Common Response format:
 
 ## Mobile-facing endpoints
 
-### Auth (`auth-service`)
+### Auth
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -88,7 +90,7 @@ All services return errors in Orange Common Response format:
 | POST | `/auth/refresh` | Public | Refresh access token |
 | POST | `/auth/sign-out` | JWT | Sign out |
 
-### Users (`user-service`)
+### Users
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -100,28 +102,46 @@ All services return errors in Orange Common Response format:
 | DELETE | `/users/:id/device-token` | JWT | Revoke device token on logout |
 | POST | `/users/ensure` | Internal | Sync profile after auth |
 
-### Squads (`squad-service`)
+### Squads
+
+Join, invite, and admin rules: [`SQUADS.md`](SQUADS.md).
+
+Pending join requests **and** invitations reserve seats: `remainingSeats = max − members − pending`. When a user joins, **all** of their join/invite rows are deleted.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/squads/stats` | JWT | Formation statistics |
 | GET | `/squads` | JWT | Search squads (summary rows) |
 | GET | `/squads/admin/all` | JWT + ADMIN | Full squads with members |
-| POST | `/squads/admin/assign` | JWT + ADMIN | Admin assign employee |
+| GET | `/squads/admin/unassigned-employees` | JWT + ADMIN | Registered employees with no squad |
+| GET | `/squads/admin/invites` | JWT + ADMIN | Leader invitations across squads |
+| POST | `/squads/admin/assign` | JWT + ADMIN | Assign unassigned employee (deletes their pending requests) |
+| PUT | `/squads/admin/:id` | JWT + ADMIN | Rename squad |
+| PUT | `/squads/admin/:id/leadership` | JWT + ADMIN | Transfer leadership |
+| DELETE | `/squads/admin/:id/members/:memberId` | JWT + ADMIN | Remove member |
+| DELETE | `/squads/admin/:id/invites/:requestId` | JWT + ADMIN | Cancel pending invite (frees seat) |
+| DELETE | `/squads/admin/:id` | JWT + ADMIN | Delete squad |
 | PUT | `/squads/:id/destination` | JWT + ADMIN | Set squad destination |
 | GET | `/squads/my/:userId` | JWT | User's squad |
 | GET | `/squads/join-status/:userId` | JWT | Join request status |
+| GET | `/squads/:id/suggested-members` | JWT + leader | Invite directory (`canInvite`, `inSquadName`, `remainingSeats`) |
 | GET | `/squads/:id` | JWT | Squad details |
-| POST | `/squads` | JWT | Create squad |
+| POST | `/squads` | JWT | Create squad (clears the leader’s pending requests) |
 | POST | `/squads/:id/join` | JWT | Request to join |
-| PUT | `/squads/:id/requests/:requestId/:leaderId` | JWT | Approve/reject join |
+| POST | `/squads/:id/invites` | JWT + leader | Invite member (uses one remaining seat) |
+| PUT | `/squads/:id/invites/:requestId` | JWT | Invitee accept/reject |
+| DELETE | `/squads/:id/invites/:requestId` | JWT + leader | Cancel invite (frees seat) |
+| PUT | `/squads/:id/requests/:requestId` | JWT + leader | Approve/reject join |
+| DELETE | `/squads/:id/members/:memberId` | JWT + leader | Remove member |
+| PUT | `/squads/:id/leadership` | JWT + leader | Transfer leadership |
+| POST | `/squads/:id/leave` | JWT | Leave squad |
 
-### Surveys & gallery (`survey-service`)
+### Surveys & gallery
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/surveys/catalog` | JWT | Active surveys for mobile home |
-| GET | `/surveys/active/:segment` | JWT | Active survey by segment |
+| GET | `/surveys/catalog` | JWT | Active surveys for mobile home (id, segment, title, description — **no questions**) |
+| GET | `/surveys/active/:segment` | JWT | Active survey by segment (**full questions**). Mobile prefetches this on Home and caches it for offline open |
 | GET | `/surveys/:id` | JWT | Survey by ID |
 | POST | `/responses` | JWT + squad | Submit survey response |
 | GET | `/responses/progress/:squadId` | JWT | Squad progress |
@@ -139,7 +159,9 @@ All services return errors in Orange Common Response format:
 
 See [`docs/architecture/GALLERY_NOTIFICATIONS.md`](../architecture/GALLERY_NOTIFICATIONS.md) for the unified gallery ↔ notifications model.
 
-### Push dispatch (`notification-service`)
+Employee-app offline open/fill/draft is client-side: [`docs/mobile/OFFLINE_SURVEYS.md`](../mobile/OFFLINE_SURVEYS.md). `POST /responses` is still required to persist a submission; the phone queues that call when offline.
+
+### Push dispatch
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -150,7 +172,7 @@ See [`docs/architecture/GALLERY_NOTIFICATIONS.md`](../architecture/GALLERY_NOTIF
 
 Setup: [`docs/PUSH_FIREBASE_SETUP.md`](../PUSH_FIREBASE_SETUP.md)
 
-### Config & chat (`config-service`)
+### Config & chat
 
 Full chat documentation: [`docs/api/CHAT_API.md`](CHAT_API.md)
 

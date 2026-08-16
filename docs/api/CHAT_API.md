@@ -1,12 +1,12 @@
 # my boss app — Chat API
 
-> **Service:** config-service (port 3003)  
-> **Gateway path:** `/config/api/v1/chat/*`  
-> **Swagger:** http://127.0.0.1:3003/api/v1/docs (tag: **Chat**)
+> **API:** `myboss-api` (port 3001)  
+> **Paths:** `/api/v1/chat/*`  
+> **Swagger:** http://127.0.0.1:3001/docs (tag: **Chat**)
 
 ## Overview
 
-my boss app demo uses **native in-app direct messaging** between squad teammates. Messages are stored **in-memory** when `DB_ENABLED=false`, or in the shared **`chat_messages`** MariaDB table when `DB_ENABLED=true`.
+Native in-app direct messaging between squad teammates. Messages are stored in the shared **`chat_messages`** MySQL table (`my_boss`) when `DB_ENABLED=true`.
 
 | Capability | Implementation |
 |---|---|
@@ -20,14 +20,12 @@ my boss app demo uses **native in-app direct messaging** between squad teammates
 
 ```mermaid
 flowchart LR
-  Mobile[Flutter Live Chat] --> Gateway[API Gateway :8090]
-  Gateway --> Config[config-service]
-  Config --> Repo[(In-memory or chat_messages)]
-  Mobile --> Squad[squad-service]
-  Squad --> Members[Squad member list]
+  Mobile[Flutter Live Chat] --> API[myboss-api :3001]
+  API --> Repo[(chat_messages)]
+  API --> Members[Squad member list]
 ```
 
-1. User opens **Live Chat** → app loads squad via squad-service.
+1. User opens **Live Chat** → app loads squad from the same API.
 2. Contact dropdown lists **squad members only** (excluding self).
 3. Selecting a contact opens `NativeChatView` which polls `GET /chat/messages?peerId=`.
 4. Sending uses `POST /chat/messages` with `{ recipientId, text }`.
@@ -203,9 +201,9 @@ Interactive docs are generated from NestJS decorators on `ChatController` and `S
 
 | Environment | Swagger UI |
 |---|---|
-| Local gateway | http://127.0.0.1:3003/api/v1/docs |
+| Local gateway | http://127.0.0.1:3001/api/v1/docs |
 | Public tunnel | `https://<tunnel-host>/config/api/v1/docs` (see `demo-public-url.txt` at repo root) |
-| Direct service | http://127.0.0.1:3003/api/v1/docs |
+| Direct service | http://127.0.0.1:3001/api/v1/docs |
 
 In Swagger UI, expand tag **Chat**, click **Authorize**, paste `Bearer {accessToken}` from `POST /auth/verify-2fa`.
 
@@ -214,34 +212,31 @@ In Swagger UI, expand tag **Chat**, click **Authorize**, paste `Bearer {accessTo
 All chat routes use the existing **config** proxy — no separate chat proxy needed:
 
 ```
-http://<HOST>:3003/api/v1/chat/config     → public
-http://<HOST>:3003/api/v1/chat/health     → public
-http://<HOST>:3003/api/v1/chat/visitor    → JWT verify
-http://<HOST>:3003/api/v1/chat/messages   → JWT verify
+http://<HOST>:3001/api/v1/chat/config     → public
+http://<HOST>:3001/api/v1/chat/health     → public
+http://<HOST>:3001/api/v1/chat/visitor    → JWT verify
+http://<HOST>:3001/api/v1/chat/messages   → JWT verify
 ```
 
 See also: [`docs/architecture/APIGEE_CHAT.md`](../architecture/APIGEE_CHAT.md) and [`docs/deployment/pdf/03_APIGEE_CONNECTION.md`](../deployment/pdf/03_APIGEE_CONNECTION.md).
 
-## Environment variables (config-service)
+## Environment variables
 
 ```env
 CHAT_ENABLED=true
-TAWK_PROPERTY_ID=demo          # legacy Apigee field names
+TAWK_PROPERTY_ID=demo
 TAWK_WIDGET_ID=demo
 CHAT_EVENT_DAILY_USERS=1500
 CHAT_EVENT_DURATION_DAYS=7
 CHAT_APIGEE_BASE_PATH=/config/api/v1/chat
-JWT_SECRET=...                 # same secret as auth-service
+JWT_SECRET=...                 # same secret as the rest of the API
 ```
 
-## Verification scripts
+## Verification
 
 ```bash
-# Full mobile + chat smoke (gateway)
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-
-# Localhost including send + support reply
-./scripts/verify-localhost.sh
+curl http://127.0.0.1:3001/api/v1/health
+curl http://127.0.0.1:3001/api/v1/chat/config
 ```
 
 ## Manual curl test
@@ -260,13 +255,13 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:3001/api/v1/auth/verify-2fa \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
 
 # 3. Send message to squad member (user id 1 = Nisreen for demo@orange.com)
-curl -s -X POST http://127.0.0.1:3003/api/v1/chat/messages \
+curl -s -X POST http://127.0.0.1:3001/api/v1/chat/messages \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"recipientId":"1","text":"Hello teammate"}'
 
 # 4. Poll messages
-curl -s "http://127.0.0.1:3003/api/v1/chat/messages?peerId=1" \
+curl -s "http://127.0.0.1:3001/api/v1/chat/messages?peerId=1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

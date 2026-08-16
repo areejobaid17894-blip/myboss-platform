@@ -1,6 +1,6 @@
 # Integration governance — my boss app
 
-**Status:** Implemented in `@myboss/common` and enforced across all five microservices.  
+**Status:** Implemented in `@myboss/common` and enforced on the single NestJS API.  
 **Audience:** Backend, mobile, admin, Apigee platform teams.
 
 ## Related docs
@@ -9,28 +9,28 @@
 |---|---|
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | Endpoint catalogue + auth classes |
 | [`../deployment/APIGEE_CONNECTION.md`](../deployment/APIGEE_CONNECTION.md) | Apigee proxy routes and policies |
-| [`../database/DATABASE.md`](../database/DATABASE.md) | MariaDB schema + demo seed |
+| [`../database/DATABASE.md`](../database/DATABASE.md) | MySQL schema (`my_boss`) |
 | [`APIGEE_CHAT.md`](APIGEE_CHAT.md) | Chat-specific proxy notes |
 
 ## Architecture
 
 ```
-Mobile / Admin  →  Orange Apigee  →  Microservices (:3001–3006)
+Mobile / Admin  →  myboss-api :3001 /api/v1/**
                          │
-                         ├── /auth/api/v1/**   → auth-service   :3001
-                         ├── /user/api/v1/**   → user-service   :3002
-                         ├── /config/api/v1/** → config-service :3003
-                         ├── /squad/api/v1/**  → squad-service  :3004
-                         ├── /survey/api/v1/** → survey-service :3005
-                         └── /notification/api/v1/** → notification-service :3006
+                         ├── /auth/**
+                         ├── /users/**
+                         ├── /config/**  /chat/**
+                         ├── /squads/**
+                         ├── /surveys/**  /gallery/**  /notifications/**
+                         └── /push/**
 ```
 
-**Local dev:** direct ports `:3001–3006` (no nginx API gateway). See [`APIGEE_VS_NGINX.md`](APIGEE_VS_NGINX.md).
+**Runtime:** one API (`:3001`) and one admin SPA (`:8081`). No nginx and no extra microservice ports. Optional future Apigee gateway in front of `:3001`.
 
-Each service exposes:
+The API exposes:
 
 - REST under `/api/v1`
-- Swagger at `/api/v1/docs` (when `APP_ENV=development|demo` or `SWAGGER_ENABLED=true`)
+- Swagger at `http://127.0.0.1:3001/docs` (when `APP_ENV=development|demo|preprod` or `SWAGGER_ENABLED=true`)
 - Orange Common Response errors via `HttpExceptionFilter`
 
 ## Orange error envelope
@@ -96,14 +96,14 @@ X-Internal-Service-Token: {INTERNAL_SERVICE_TOKEN}
 
 | Route | Guard | Called by |
 |---|---|---|
-| `POST /user/api/v1/users/ensure` | `InternalServiceGuard` | auth-service after sign-in |
-| `PUT /user/api/v1/users/:id/squad` | `InternalOrAdminGuard` | squad-service sync **or** admin JWT |
+| `POST /users/ensure` | `InternalServiceGuard` | Auth module after sign-in |
+| `PUT /users/:id/squad` | `InternalOrAdminGuard` | Squad module sync **or** admin JWT |
 
 Default demo token: `demo-internal-sync` (override via env in production).
 
 ## Swagger / OpenAPI
 
-- Built with `@nestjs/swagger` via `setupServiceSwagger()` in each service `main.ts`
+- Built with `@nestjs/swagger` on the single API (`http://127.0.0.1:3001/docs`)
 - Bearer auth scheme: `bearer` (JWT)
 - Server URLs include Apigee path prefix and direct dev path
 - Use `@ApiOrangeErrors()` on controllers to document standard error responses
@@ -125,21 +125,20 @@ Do **not** commit compiled `.js` files under `libs/common/src/` — TypeScript o
 
 ## Apigee checklist
 
-1. Create six proxies matching Apigee paths (see `APIGEE_CONNECTION.md`)
+1. Create one proxy to `myboss-api :3001` (see `APIGEE_CONNECTION.md` if Apigee is used)
 2. Pass `Authorization` and `Accept-Language` unchanged on authenticated routes
 3. Do **not** expose internal sync routes publicly without IP allowlist + service token policy
 4. Spike arrest / CORS per Orange standards
-5. Health: `GET /**/health` on each service
+5. Health: `GET /api/v1/health`
 
 ## Verification
 
 ```bash
-./scripts/verify-localhost.sh
-./scripts/verify-mobile-api.sh 127.0.0.1
-./scripts/verify-mobile-api.sh --apigee
+curl http://127.0.0.1:3001/api/v1/health
+curl http://127.0.0.1:3001/docs
 ```
 
-Swagger (direct): `http://localhost:3001/api/v1/docs` … `3006`.
+Swagger: `http://127.0.0.1:3001/docs`.
 
 ---
 

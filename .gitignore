@@ -1,6 +1,9 @@
 .env
 .env.*
 !.env.example
+!.env.development.example
+!.env.production.example
+!.env.preprod.example
 demo-public-url.txt
 .idea/
 .vscode/
@@ -9,3 +12,6 @@ demo-public-url.txt
 demo-tunnel*.pid
 docker/data/
 secrets/
+scripts/_tmp-*
+DONE*
+Installing

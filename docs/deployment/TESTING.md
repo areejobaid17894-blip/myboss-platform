@@ -5,41 +5,29 @@
 
 ---
 
-## 1. Automated verification (recommended)
+## 1. Smoke checks
 
 ```bash
 cd myboss-platform
-
-# Reset demo data before a test cycle (squads, terms, seed users)
-./scripts/reset-demo-data.sh
-
-# Backend health (ports 3001–3006)
-./scripts/verify-backend.sh
-
-# Mobile API governance (direct local ports)
-./scripts/verify-mobile-api.sh 127.0.0.1
-
-# Same checks through Apigee (after proxies are wired)
-./scripts/verify-mobile-api.sh --apigee
-
-# Full localhost feature pass (squad, chat, surveys)
-./scripts/verify-localhost.sh
+docker compose up -d --build
+curl http://127.0.0.1:3001/api/v1/health
+curl http://127.0.0.1:3001/api/v1/push/status
 ```
 
+Do **not** run long MySQL login poll loops as part of testing — that can take the shared DB down.
 ---
 
 ## 2. Swagger UI (interactive API docs)
 
-### Local (direct service ports)
+### Local (single API)
 
-| Service | URL |
-|---------|-----|
-| Auth | http://127.0.0.1:3001/api/v1/docs |
-| User | http://127.0.0.1:3002/api/v1/docs |
-| Config (+ **Chat**) | http://127.0.0.1:3003/api/v1/docs |
-| Squad | http://127.0.0.1:3004/api/v1/docs |
-| Survey | http://127.0.0.1:3005/api/v1/docs |
-| Notification | http://127.0.0.1:3006/api/v1/docs |
+| | URL |
+|---|---|
+| Health | http://127.0.0.1:3001/api/v1/health |
+| Swagger | http://127.0.0.1:3001/docs |
+| Push status | http://127.0.0.1:3001/api/v1/push/status |
+
+Squad join / invite / admin: [`../api/SQUADS.md`](../api/SQUADS.md). Orange SSO + Maxit curls: [`ORANGE_OTP_SETUP.md`](ORANGE_OTP_SETUP.md).
 
 ### Apigee (demo)
 
@@ -58,7 +46,7 @@ To test JWT endpoints in Swagger: **Authorize** → `Bearer {accessToken}`.
 ```bash
 # Direct ports
 curl http://127.0.0.1:3001/api/v1/health
-curl http://127.0.0.1:3006/api/v1/push/status
+curl http://127.0.0.1:3001/api/v1/push/status
 
 # Through Apigee
 curl https://api-demo.orange.com/auth/api/v1/health
@@ -100,15 +88,15 @@ Full reference: [`../api/CHAT_API.md`](../api/CHAT_API.md)
 
 ```bash
 # Public
-curl http://127.0.0.1:3003/api/v1/chat/config
-curl http://127.0.0.1:3003/api/v1/chat/health
+curl http://127.0.0.1:3001/api/v1/chat/config
+curl http://127.0.0.1:3001/api/v1/chat/health
 
 # JWT required
-curl http://127.0.0.1:3003/api/v1/chat/visitor \
+curl http://127.0.0.1:3001/api/v1/chat/visitor \
   -H "Authorization: Bearer <ACCESS_TOKEN>"
 
 # Send message
-curl -X POST http://127.0.0.1:3003/api/v1/chat/messages \
+curl -X POST http://127.0.0.1:3001/api/v1/chat/messages \
   -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"recipientId":"1","text":"QA test message"}'
@@ -127,7 +115,7 @@ curl -X POST http://127.0.0.1:3003/api/v1/chat/messages \
 | Vite dev (local APIs) | http://127.0.0.1:5173 | `admin@orange.com` / `admin123` → OTP |
 | Docker (Apigee APIs) | http://127.0.0.1:8081 | same |
 
-1. Start backend: `./scripts/deploy-demo-server.sh 127.0.0.1`
+1. Start backend: `cd myboss-platform && docker compose up -d --build`
 2. For local dev: `cd ../myboss-admin && npm run dev`
 3. Verify V2 console: black sidebar, **Overview** landing page
 4. Test: Squads table, Unregistered assign, Destinations save
@@ -138,7 +126,7 @@ curl -X POST http://127.0.0.1:3003/api/v1/chat/messages \
 
 | Step | Action | Expected |
 |------|--------|----------|
-| 0 | Run `reset-demo-data.sh` | Fresh squads; users must accept T&C |
+| 0 | Restart API / use seed users in DB | Fresh squads; users must accept T&C |
 | 1 | Sign in `demo@orange.com` | OTP → **terms popup** → home |
 | 2 | Toggle EN / AR | Labels change |
 | 3 | Tap **Live Chat** FAB | Squad contact picker |
@@ -149,6 +137,12 @@ curl -X POST http://127.0.0.1:3003/api/v1/chat/messages \
 | 8 | Reports tab (omar) | Locked panel |
 | 9 | Gallery tab | Upload locked without squad |
 | 10 | Profile → Log out | Returns to sign-in |
+| 11 | Home online → airplane mode → open a service | Form opens from cache (questions visible) |
+| 12 | Fill answers → Leave | Draft saved on device |
+| 13 | Reopen same service offline | Answers restored |
+| 14 | Finish + submit offline, then go online | Draft queued, then auto-submitted on Home |
+
+Offline survey details: [`../mobile/OFFLINE_SURVEYS.md`](../mobile/OFFLINE_SURVEYS.md).
 
 **Run mobile against Apigee:**
 
@@ -164,16 +158,19 @@ fvm flutter run \
 
 ```bash
 # Emulator
-fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
-
-# Physical device (replace with your Mac LAN IP)
 fvm flutter run \
-  --dart-define=GATEWAY_ORIGIN=http://192.168.1.9:3001 \
   --dart-define=ENV=development \
-  --dart-define=DEMO_MODE=true
+  --dart-define=API_HOST=10.0.2.2 \
+  --dart-define=DEMO_MODE=false
+
+# Physical device (replace with your PC LAN IP)
+fvm flutter run \
+  --dart-define=ENV=development \
+  --dart-define=API_HOST=192.168.x.x \
+  --dart-define=DEMO_MODE=false
 ```
 
-Or install `./build-apigee-android.sh` / `./build-local-android.sh` APK.
+Commands: `myboss-mobile/README.md`.
 
 ---
 
@@ -192,14 +189,18 @@ npm run test:survey
 
 ## 9. Test checklist
 
-- [ ] All 6 health endpoints OK (`verify-backend.sh`)
-- [ ] All Swagger UIs load (local or Apigee)
-- [ ] Employee sign-in + verify-2fa works
+- [ ] Single API health OK (`curl http://127.0.0.1:3001/api/v1/health`)
+- [ ] Swagger UI loads at `http://127.0.0.1:3001/docs`
+- [ ] Employee sign-in + verify-2fa works (OTP emailed via Orange)
 - [ ] JWT required on squad/user/chat (401 without token)
 - [ ] Orange error envelope on 401
 - [ ] Squad create/join works (JWT-derived user)
+- [ ] Pending invites reserve seats (1-member squad: max 4 invites)
+- [ ] Cancel invite frees a seat; joining deletes the user’s other requests
+- [ ] Admin: rename, make leader, add unassigned, remove, delete, Invitations cancel
 - [ ] Chat send + poll between squad members
 - [ ] Survey submit + catalog works
+- [ ] Mobile: Home online caches services; offline open + draft + submit-when-online ([`../mobile/OFFLINE_SURVEYS.md`](../mobile/OFFLINE_SURVEYS.md))
 - [ ] Admin login + V2 nav loads
 - [ ] Mobile EN/AR + logout + session redirect
 - [ ] Apigee paths (`verify-mobile-api.sh --apigee`)

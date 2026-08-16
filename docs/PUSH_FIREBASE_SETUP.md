@@ -9,10 +9,9 @@ Console: https://console.firebase.google.com/project/my-boss-app-38576
 ## Architecture
 
 ```
-Admin → POST /survey/api/v1/notifications
-     → survey-service (in-app truth + gallery)
-     → notification-service (FCM HTTP v1, port 3006)
-     → user-service (device token lookup)
+Admin → POST /api/v1/notifications
+     → myboss-api (in-app truth + gallery + FCM HTTP v1)
+     → device token lookup (same process)
      → FCM → mobile PushService
 ```
 
@@ -27,7 +26,7 @@ In-app notifications work without FCM. Push requires backend FCM enabled **and**
 | `google-services.json` | `myboss-mobile/android/app/` | ✅ Configured |
 | `firebase_options.dart` | `myboss-mobile/lib/` | ✅ Android configured |
 | Service account JSON | `myboss-platform/secrets/fcm-service-account.json` | ✅ Required for backend |
-| `GoogleService-Info.plist` | `myboss-mobile/ios/Runner/` | ⚠️ Add via `./scripts/setup-ios-firebase.sh` |
+| `GoogleService-Info.plist` | `myboss-mobile/ios/Runner/` | Add from Firebase Console |
 | APNs `.p8` key | Firebase Console → Cloud Messaging | ⚠️ Required for iOS push delivery |
 
 **Never commit** `secrets/fcm-service-account.json` or service account keys to git.
@@ -42,10 +41,8 @@ Add to **`myboss-platform/.env`** (Docker reads this file):
 FCM_ENABLED=true
 FCM_PROJECT_ID=my-boss-app-38576
 FCM_SERVICE_ACCOUNT_PATH=/run/secrets/fcm-service-account.json
-FCM_SERVICE_ACCOUNT_HOST_PATH=/absolute/path/to/myboss-platform/secrets/fcm-service-account.json
-NOTIFICATION_SERVICE_URL=http://notification-service:3006/api/v1
+NOTIFICATION_SERVICE_URL=http://127.0.0.1:3001/api/v1
 PUSH_DISPATCH_ENABLED=true
-NOTIFICATION_SERVICE_PORT=3006
 ```
 
 Place the downloaded Firebase Admin SDK JSON at:
@@ -58,14 +55,14 @@ Redeploy:
 
 ```bash
 cd myboss-platform
-./scripts/deploy-demo-server.sh 127.0.0.1
-./scripts/verify-backend.sh
+docker compose up -d --build
+curl http://127.0.0.1:3001/api/v1/push/status
 ```
 
 Expected:
 
 ```bash
-curl http://127.0.0.1:3006/api/v1/push/status
+curl http://127.0.0.1:3001/api/v1/push/status
 # {"fcmEnabled":true,"mode":"live"}
 ```
 
@@ -82,21 +79,20 @@ cd myboss-mobile
 fvm flutter pub get
 fvm flutter gen-l10n
 
-# External testers (Cloudflare tunnel URL baked in):
-./build-external-android.sh
-
-# Same Wi‑Fi:
-./build-local-android.sh
+```bash
+flutter build apk --release \
+  --dart-define=API_HOST=<host> \
+  --dart-define=API_PORT=3001 \
+  --dart-define=DEMO_MODE=false \
+  --dart-define=PUSH_ENABLED=true
 ```
-
-All APK build scripts pass `--dart-define=PUSH_ENABLED=true`.
 
 ### iOS push
 
 Native iOS plumbing is in place (entitlements, AppDelegate, background modes). You still need Firebase + Apple credentials:
 
 1. Register iOS app in Firebase — bundle ID **`com.myboss.mybossMobile`**
-2. Download `GoogleService-Info.plist` → run `./scripts/setup-ios-firebase.sh`
+2. Download `GoogleService-Info.plist` into `myboss-mobile/ios/Runner/`
 3. Upload **APNs `.p8` key** to Firebase → Cloud Messaging
 4. Run on device: `./build-ios-demo.sh`
 
@@ -137,7 +133,7 @@ Check push audit (admin JWT):
 
 ```bash
 curl -H "Authorization: Bearer <admin-token>" \
-  http://127.0.0.1:3006/api/v1/push/audit?limit=10
+  http://127.0.0.1:3001/api/v1/push/audit?limit=10
 ```
 
 ---
@@ -151,7 +147,7 @@ curl -H "Authorization: Bearer <admin-token>" \
 | Token not registered | Login on device; check `POST /users/:id/device-token` in gateway logs |
 | FCM 401/403 | Regenerate service account key; enable Firebase Cloud Messaging API (V1) in GCP |
 | Push works, in-app missing | survey-service issue — check `/survey/api/v1/notifications` |
-| iOS no push | Run `./scripts/setup-ios-firebase.sh`; upload APNs `.p8` to Firebase; use physical iPhone |
+| iOS no push | Add `GoogleService-Info.plist`; upload APNs `.p8` to Firebase; use a physical iPhone |
 
 ---
 
@@ -169,5 +165,6 @@ curl -H "Authorization: Bearer <admin-token>" \
 ## Related docs
 
 - [`architecture/GALLERY_NOTIFICATIONS.md`](architecture/GALLERY_NOTIFICATIONS.md) — in-app vs push design
-- [`NEW_DEVICE_SETUP.md`](NEW_DEVICE_SETUP.md) — new machine + APK install
+- [`INSTALL.md`](INSTALL.md) — new machine install & run
 - [`api/API_OVERVIEW.md`](api/API_OVERVIEW.md) — notification + device-token endpoints
+- [`deployment/ENV_AND_GITLAB_VARIABLES.md`](deployment/ENV_AND_GITLAB_VARIABLES.md) — FCM / GitLab vars

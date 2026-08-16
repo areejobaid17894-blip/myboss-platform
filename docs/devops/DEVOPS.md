@@ -1,192 +1,125 @@
-# DevOps & Infrastructure Guide
+# DevOps — how to run and what CI/CD should deploy
 
-**Audience:** DevOps, SRE, platform engineers  
-**Local install first:** [`INSTALL.md`](../INSTALL.md)
+**Scope:** two containers only.
 
----
+| Container | Image source | Port | Role |
+|-----------|--------------|------|------|
+| `myboss-api` | `myboss-backend/docker/Dockerfile` | **3001** | Employee + admin API |
+| `myboss-admin` | `myboss-admin/docker/Dockerfile` | **8081** | Admin web UI |
 
-## 1. Technology stack (pinned versions)
+Mobile (Flutter) is **not** deployed with this stack.  
+This repo does **not** ship deploy scripts. **DevOps CI/CD** builds the two images, injects GitLab variables, and starts Compose (or equivalent).
 
-| Component | Version | Where defined |
-|-----------|---------|---------------|
-| **Node.js** | **20 LTS** (`node:20-alpine`) | Dockerfiles, CI |
-| **TypeScript** | **5.9.3** | `myboss-backend` and `myboss-admin` `package-lock.json` |
-| **NestJS** | **10.4** | `myboss-backend/package-lock.json` |
-| **React** | **19** | `myboss-admin/package-lock.json` |
-| **Vite** | **6** | `myboss-admin/package-lock.json` |
-| **Flutter** | **3.35.7** | `myboss-mobile/.fvmrc`, `pubspec.yaml` |
-| **Dart** | **≥3.9.2 <4.0.0** | `myboss-mobile/pubspec.yaml` |
-| **Docker** | **24+** Compose v2 | VM requirement |
-| **MariaDB** | **11.4** | Optional (`with-mariadb` profile) |
-
-### Microservices (direct ports — no gateway)
-
-| Service | Port | Local base URL |
-|---------|------|----------------|
-| auth-service | 3001 | http://127.0.0.1:3001/api/v1 |
-| user-service | 3002 | http://127.0.0.1:3002/api/v1 |
-| config-service | 3003 | http://127.0.0.1:3003/api/v1 |
-| squad-service | 3004 | http://127.0.0.1:3004/api/v1 |
-| survey-service | 3005 | http://127.0.0.1:3005/api/v1 |
-| notification-service | 3006 | http://127.0.0.1:3006/api/v1 |
-
-Admin SPA: **8081** · Employee web (dev): **8092** · Vite admin dev: **5173**
+Laptop run: [`INSTALL.md`](../INSTALL.md).  
+Stages: [`../deployment/STAGES.md`](../deployment/STAGES.md).  
+Variable list: [`../deployment/ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md).
 
 ---
 
-## 2. VM requirements
+## Repos
 
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
-| CPU | 2 vCPU | 4 vCPU |
-| RAM | 4 GB | 8 GB |
-| Disk | 30 GB SSD | 50 GB SSD |
-| Docker | 24+ Compose v2 | Latest stable |
+| Clone | GitLab |
+|-------|--------|
+| `myboss-backend` | https://github.com/areejobaid17894-blip/myboss-backend |
+| `myboss-admin` | https://github.com/areejobaid17894-blip/myboss-admin |
+| `myboss-platform` | https://github.com/areejobaid17894-blip/myboss-platform |
+
+`.env` is **never** in git. Production / preprod / development values come from **GitLab → Settings → CI/CD → Variables**.
 
 ---
 
-## 3. One-time server setup
+## What CI/CD should do
 
-### Install Docker
+1. Checkout the three repos as siblings (same parent folder).
+2. Materialize `myboss-platform/.env` from GitLab variables (or a File variable `MYBOSS_RUNTIME_ENV`).
+3. From `myboss-platform`:
 
 ```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-# Log out and back in
-docker --version && docker compose version
+docker compose up -d --build
 ```
 
-### Clone all four repos
+4. Health: `GET http://127.0.0.1:3001/api/v1/health` → `"status":"ok"`.
+5. Admin: `http://<DEMO_HOST>:8081/login`.
+
+Changing `DEMO_HOST` requires a **rebuild** of `myboss-admin` (Vite bakes the API URL).
+
+Compose file: [`docker-compose.yml`](../../docker-compose.yml) (repo root).
+
+---
+
+## GitLab variable templates
+
+| Stage | Run file | GitLab file |
+|-------|----------|-------------|
+| Development | [`.env.development.example`](../../.env.development.example) | [`gitlab-development.env.example`](gitlab-development.env.example) |
+| Production | [`.env.production.example`](../../.env.production.example) | [`gitlab-production.env.example`](gitlab-production.env.example) |
+| Preprod (staging) | [`.env.preprod.example`](../../.env.preprod.example) | [`gitlab-preprod.env.example`](gitlab-preprod.env.example) |
+
+Same **key names** on every stage. Mask secrets. Prefer **group** `myboss` variables for `MYSQL_*`, `JWT_SECRET`, and Orange OTP keys.
+
+---
+
+## Host requirements
+
+| Need | Value |
+|------|--------|
+| OS | Linux (Ubuntu 22.04+) |
+| Docker | 24+ with Compose v2 |
+| MySQL (dev + prod) | `10.1.165.105:3308` database `my_boss` |
+| MySQL (preprod) | Dedicated DB — fill `MYSQL_*` in `.env.preprod.example` when DBA provides it |
+| OTP (dev + prod) | `10.4.3.27:9001` |
+| OTP (preprod / staging) | `10.1.112.95:9001` + hosts `10.1.112.95 preprod-notification.xyz.jt.jtgroup` |
+| Publish | `3001`, `8081` (or load balancer → these) |
+| RAM | 4 GB min · 8 GB recommended |
+
+Do **not** run extra API containers. Do **not** run a local MySQL for the app. Keep `MYSQL_CONNECTION_LIMIT=1` and `DB_SYNCHRONIZE=false`.
+
+---
+
+## Stages (OTP vs DB)
+
+| Stage | `APP_ENV` | MySQL | Orange SSO + Maxit |
+|-------|-----------|-------|---------------------|
+| Development | `development` | Production DB | Production (`10.4.3.27`) |
+| Production | `production` | Same production DB | Same production Maxit (`10.4.3.27`) |
+| Preprod (staging) | `preprod` | Dedicated preprod DB (fill later) | Preprod APIs |
+
+Force OTP with `ORANGE_OTP_ENV=production` or `preprod`.
+
+---
+
+## Local / server Compose (no scripts)
 
 ```bash
-sudo mkdir -p /opt/myboss && sudo chown $USER:$USER /opt/myboss
-cd /opt/myboss
-
-git clone https://github.com/areejobaid17894-blip/myboss-backend.git
-git clone https://github.com/areejobaid17894-blip/myboss-admin.git
-git clone https://github.com/areejobaid17894-blip/myboss-mobile.git
-git clone https://github.com/areejobaid17894-blip/myboss-platform.git
+cd /opt/myboss   # or ~/myboss
+# siblings: myboss-backend, myboss-admin, myboss-platform
 
 cd myboss-platform
-chmod +x scripts/*.sh
-./scripts/install-demo-server.sh /opt/myboss
+cp .env.example .env   # fill secrets, or write .env from GitLab
+docker compose up -d --build
+curl http://127.0.0.1:3001/api/v1/health
 ```
 
-### Environment file
+Stop: `docker compose down`.  
+Logs: `docker compose logs -f api admin`.
 
-```bash
-cd /opt/myboss/myboss-platform
-cp .env.example .env
-nano .env
-```
-
-**Required:**
-
-```env
-NODE_ENV=demo
-APP_ENV=demo
-JWT_SECRET=<openssl rand -base64 48>
-INTERNAL_SERVICE_TOKEN=<openssl rand -base64 32>
-TWO_FA_DEMO_ENABLED=true
-CHAT_ENABLED=true
-DEMO_ADMIN_PASSWORD=admin123
-DEMO_HOST=127.0.0.1
-```
-
-Full list: [`.env.example`](../../.env.example) · GitLab: [`ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md)
+| Check | URL |
+|-------|-----|
+| API health | `http://127.0.0.1:3001/api/v1/health` |
+| Swagger (non-prod) | `http://127.0.0.1:3001/docs` |
+| Admin | `http://<DEMO_HOST>:8081/login` |
 
 ---
 
-## 4. Deploy
+## Admin image build args
 
-```bash
-cd /opt/myboss/myboss-platform
-./scripts/deploy-demo-server.sh 127.0.0.1
-```
-
-Manual equivalent:
-
-```bash
-docker compose -f docker/docker-compose.demo.yml up -d --build
-docker compose -f docker/docker-compose.demo.yml --profile with-admin up -d --build admin-portal
-```
-
-**After deploy (local on VM):**
-
-| Component | URL |
-|-----------|-----|
-| Admin | http://127.0.0.1:8081/login |
-| Backend health | http://127.0.0.1:3001/api/v1/health … :3006 |
-| Auth Swagger | http://127.0.0.1:3001/api/v1/docs |
-
-Reset demo seed: `./scripts/reset-demo-data.sh`
+| Arg / env | Meaning |
+|-----------|---------|
+| `DEMO_HOST` | Public hostname or IP baked into the SPA |
+| `ADMIN_BUILD_MODE` | `demo` (laptop) or `production` |
+| `VITE_APP_ENV` | `development` / `preprod` / `production` |
+| `VITE_API_URL` | Optional override of `http://<DEMO_HOST>:3001/api/v1` |
 
 ---
 
-## 5. Verify
-
-```bash
-./scripts/verify-backend.sh
-./scripts/verify-mobile-api.sh 127.0.0.1
-./scripts/verify-localhost.sh
-docker compose -f docker/docker-compose.demo.yml ps
-```
-
-QA checklist: [`deployment/TESTING.md`](../deployment/TESTING.md)
-
----
-
-## 6. Platform scripts
-
-| Script | Purpose |
-|--------|---------|
-| `install-demo-server.sh [DIR]` | One-time VM Docker setup |
-| `deploy-demo-server.sh [HOST]` | Build & start backend + admin |
-| `stop-demo-server.sh` | Stop demo stack |
-| `reset-demo-data.sh` | Restore demo seed |
-| `verify-backend.sh` | Health :3001–3006 |
-| `verify-mobile-api.sh [HOST]` | API smoke test |
-| `verify-localhost.sh` | Full feature smoke test |
-| `fix-admin-login.sh` | Fix admin password |
-
----
-
-## 7. Stop / update
-
-```bash
-./scripts/stop-demo-server.sh
-
-cd /opt/myboss/myboss-platform && git pull
-cd ../myboss-backend && git pull
-cd ../myboss-admin && git pull
-./scripts/deploy-demo-server.sh 127.0.0.1
-```
-
----
-
-## 8. CI/CD
-
-| Repo | Pipeline |
-|------|----------|
-| Backend | `myboss-backend/.gitlab-ci.yml` |
-| Admin | `myboss-admin/.gitlab-ci.yml` |
-| Mobile | `myboss-mobile/.gitlab-ci.yml` |
-| Platform | `myboss-platform/.gitlab-ci.yml` |
-
-Details: [`../cicd/CI_CD.md`](../cicd/CI_CD.md)
-
----
-
-## 9. DevOps checklist
-
-- [ ] Ubuntu 22.04, Docker 24+, Compose v2
-- [ ] All four repos under `/opt/myboss`
-- [ ] `.env` with strong `JWT_SECRET` and `INTERNAL_SERVICE_TOKEN`
-- [ ] `deploy-demo-server.sh 127.0.0.1` succeeds
-- [ ] `verify-backend.sh` and `verify-mobile-api.sh 127.0.0.1` pass
-- [ ] Secrets not committed to git
-
----
-
-*Orange — my boss app — DevOps*
+*Orange — my boss app*

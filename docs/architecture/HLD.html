@@ -72,41 +72,39 @@
               └───────────────┬───────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              BACKEND — NestJS Microservices                      │
-│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐      │
-│  │  Auth  │ │  User  │ │ Config │ │ Squad  │ │ Survey │      │
-│  └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘      │
-└──────┼──────────┼──────────┼──────────┼──────────┼─────────────┘
-       │          │          │          │          │
-       └──────────┴──────────┴────┬─────┴──────────┘
-                                  ▼
-                    ┌─────────────────────────┐
-                    │  MariaDB — myboss (shared) │
-                    └─────────────────────────┘
+│     BACKEND — one NestJS API (myboss-api :3001)                  │
+│     auth · users · config · squads · surveys · gallery · push    │
+└──────────────────────────────┬──────────────────────────────────┘
+                               ▼
+                 ┌─────────────────────────┐
+                 │  MySQL 8 — my_boss      │
+                 └─────────────────────────┘
 
-                    Survey Service ──► Power BI (CSV / JSON export)</div>
+Admin UI is a separate static SPA (myboss-admin :8081).
+OTP: Orange SSO + Maxit. Same DB for development, preprod, and production.</div>
 
 <h2>3. Main parts</h2>
 <table>
   <tr><th>Layer</th><th>Technology</th><th>Who uses it</th></tr>
   <tr><td>Mobile app</td><td>Flutter (Android)</td><td>Employees</td></tr>
   <tr><td>Admin portal</td><td>React + Vite</td><td>Admins</td></tr>
-  <tr><td>Backend</td><td>NestJS (5 microservices)</td><td>Both apps</td></tr>
-  <tr><td>Database</td><td>MariaDB 11 — single <code>myboss</code> database</td><td>All backend services</td></tr>
+  <tr><td>Backend</td><td>One NestJS process (myboss-api)</td><td>Both apps</td></tr>
+  <tr><td>Database</td><td>MySQL 8 — shared <code>my_boss</code></td><td>All stages</td></tr>
   <tr><td>Analytics</td><td>CSV/JSON export APIs</td><td>Power BI / Admin</td></tr>
 </table>
 
-<h2>4. Backend services</h2>
+<h2>4. Backend modules (one process)</h2>
 <table>
-  <tr><th>Service</th><th>Main job</th></tr>
+  <tr><th>Module</th><th>Main job</th></tr>
   <tr><td>Auth</td><td>Login, 2FA OTP, JWT tokens</td></tr>
-  <tr><td>User</td><td>Employee profiles and accounts</td></tr>
-  <tr><td>Config</td><td>Squad limits, buildings, app settings</td></tr>
-  <tr><td>Squad</td><td>Create/join squads, members, leaders</td></tr>
-  <tr><td>Survey</td><td>Surveys, responses, gallery, reports, Power BI export</td></tr>
+  <tr><td>Users</td><td>Employee profiles and accounts</td></tr>
+  <tr><td>Config</td><td>Squad limits, buildings, app settings, live chat</td></tr>
+  <tr><td>Squads</td><td>Create/join squads, members, leaders, invitations</td></tr>
+  <tr><td>Surveys</td><td>Surveys, responses, gallery, reports, Power BI export</td></tr>
+  <tr><td>Push</td><td>FCM dispatch</td></tr>
 </table>
 
-<h2>5. MariaDB — what is stored</h2>
+<h2>5. MySQL — what is stored</h2>
 <table>
   <tr><th>Domain</th><th>Examples</th></tr>
   <tr><td>Auth &amp; users</td><td>Single <code>users</code> table, OTP sessions</td></tr>
@@ -114,7 +112,7 @@
   <tr><td>Squads</td><td>Squads, members, join requests</td></tr>
   <tr><td>Surveys</td><td>Survey schemas, responses, gallery, analytics</td></tr>
 </table>
-<div class="note"><strong>Note:</strong> Demo defaults to in-memory data (<code>DB_ENABLED=false</code>). Enable MariaDB with <code>DB_ENABLED=true</code> and <code>MARIADB_DATABASE=myboss</code>.</div>
+<div class="note"><strong>Note:</strong> All stages use <code>DB_ENABLED=true</code> against corporate MySQL <code>my_boss</code> (<code>10.1.165.105:3308</code>). Development and production use production Maxit. Preprod uses preprod SSO/email APIs and the same database.</div>
 
 <div class="page-break"></div>
 
@@ -126,19 +124,20 @@
 <p><strong>Main screens:</strong> Sign in → OTP → Home → My Squad → Surveys → Gallery → Profile</p>
 
 <h2>7. Admin flow (Web)</h2>
-<div class="diagram">Admin login (email + password) ──► 2FA OTP ──► Dashboard
+<div class="diagram">Admin login (email + password) ──► 2FA OTP ──► Overview
                                                     │
                                                     ▼
-                          Users / Config / Surveys / Analytics ──► Export to Power BI</div>
-<p><strong>Main pages:</strong> Dashboard, Users, Configuration, Surveys, Analytics</p>
+                          Squads / Destinations / Unregistered ──► Export to Power BI</div>
+<p><strong>Main sections:</strong> Overview, Statistics, Squads, Destinations, Unregistered, Notifications, Extraction, Surveys, Photos</p>
+<p><strong>Entry URL:</strong> <code>http://&lt;DEMO_HOST&gt;:8081/login</code></p>
 
 <h2>8. Survey data flow</h2>
-<div class="diagram">Employee App ──submit──► Survey Service ──save──► MariaDB (myboss)
+<div class="diagram">Employee App ──submit──► myboss-api :3001 ──save──► MySQL (my_boss)
                               ▲                        │
                               │                        │
 Admin Portal ◄──reports───────┘                        │
      │                                                 │
-     └──download CSV──► Survey Service ◄──import── Power BI</div>
+     └──download CSV──► myboss-api ◄──import── Power BI</div>
 
 <h2>9. Security (high level)</h2>
 <table>
@@ -148,14 +147,15 @@ Admin Portal ◄──reports───────┘                        │
   <tr><td>API</td><td>JWT bearer token on requests</td></tr>
 </table>
 
-<h2>10. Deployment view (development)</h2>
-<div class="diagram">Developer Machine
-    ├── Backend Services ──► MariaDB (myboss)
-    ├── Android Emulator ──► Backend Services
-    └── Admin Portal (Browser) ──► Backend Services</div>
+<h2>10. Deployment view</h2>
+<div class="diagram">API + admin host
+    ├── myboss-api :3001 ──► MySQL (my_boss)
+    ├── myboss-admin :8081
+    ├── Employee phone ──► :3001
+    └── Admin browser ──► :8081 ──► :3001</div>
 
 <h2>11. One-line summary</h2>
-<div class="summary">Flutter mobile app for employees + React admin portal + NestJS microservices + MariaDB (<code>myboss</code>), centered on squads, dynamic surveys, and Power BI-ready analytics.</div>
+<div class="summary">Flutter employee app + React admin portal + one NestJS API + shared MySQL (<code>my_boss</code>), centered on squads, dynamic surveys, and Power BI-ready analytics.</div>
 
 <div class="footer">my boss app — High-Level Design · Orange · Confidential</div>
 

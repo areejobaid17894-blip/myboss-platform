@@ -1,9 +1,7 @@
 # Database Schema
 
 **Audience:** Backend developers, DBAs, architects  
-**Status:** Demo defaults to **in-memory** (`DB_ENABLED=false`). **MariaDB 11** with a **single shared database** (`myboss`) — all microservices connect to the same DB. Enable with `DB_ENABLED=true`.
-
-This document describes the unified MariaDB schema aligned with the employee journey (Rev 1.0, July 2026).
+**Status:** Target is **MySQL 8**. Env keys: **`MYSQL_*`**. **Development and production** share corporate DB `my_boss` on **`10.1.165.105:3308`**. **Preprod (staging)** uses a dedicated DB (fill `MYSQL_*` in `.env.preprod.example` when DBA provides it). Enable with `DB_ENABLED=true` and keep `DB_SYNCHRONIZE=false`. Schema is owned by the corporate DB (this repo does not ship SQL dumps). Keep `MYSQL_CONNECTION_LIMIT=1`.
 
 For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURITY.md) and [`../architecture/GOVERNANCE.md`](../architecture/GOVERNANCE.md).
 
@@ -11,12 +9,14 @@ For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURI
 
 ## 1. Design principles
 
-1. **One database** — All services use `MARIADB_DATABASE=myboss` (no database-per-service).
+1. **One database** — The API uses `MYSQL_DATABASE=my_boss` (same host for all stages).
 2. **Single source of truth** — No duplicated user, building, or squad snapshot columns.
-3. **Real foreign keys** — Cross-table integrity enforced in MariaDB (not logical FKs only).
+3. **Real foreign keys** — Cross-table integrity enforced in MySQL (not logical FKs only).
 4. **Eligibility + profile unified** — `users` table replaces separate `eligible_participants` + `user_profiles`.
 5. **Squad membership authoritative** — `squad_members` is the only place squad assignment is stored; API `squadId` is derived at read time.
 6. **OTP sessions ephemeral** — Hashed codes + expiry + attempt counter in `otp_sessions`.
+7. **SSO / Maxit OTP** — Development and production use production Maxit; preprod uses preprod APIs. Same MySQL for all stages. See [`../deployment/STAGES.md`](../deployment/STAGES.md).
+8. **Small pools** — `MYSQL_CONNECTION_LIMIT=1` to avoid taking the shared DB down.
 
 ---
 
@@ -24,20 +24,21 @@ For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURI
 
 | Layer | Detail |
 |-------|--------|
-| **Database** | `myboss` (one MariaDB database) |
-| **Connection** | `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MARIADB_DATABASE=myboss` |
-| **Services** | auth, user, config, squad, survey — each registers only its own TypeORM entities against the same DB |
-| **DDL reference** | `docker/mariadb/init/02-schema-reference.sql` |
+| **Database** | `my_boss` (MySQL 8 — shared across stages; preferred host `10.1.165.105:3308`) |
+| **Connection** | `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE=my_boss`, `MYSQL_CONNECTION_LIMIT=1` |
+| **TypeORM** | `type: 'mysql'` via `mysql2` (`libs/common` DatabaseModule) |
+| **Services** | Single API process registers TypeORM entities against the same DB |
+| **DDL** | Corporate MySQL `my_boss` (connection via `MYSQL_*`; no SQL dumps in this repo) |
 
-### Service → table ownership (logical, same DB)
+### Module → table ownership (logical, same DB)
 
-| Service | Primary tables |
-|---------|----------------|
-| **auth-service** | `users` (eligibility), `otp_sessions` |
-| **user-service** | `users` (profile), `device_tokens` |
-| **config-service** | `buildings`, `app_config`, `chat_messages` |
-| **squad-service** | `squads`, `squad_members`, `squad_join_requests` |
-| **survey-service** | `surveys`, `survey_responses`, `gallery_items`, `notifications` |
+| Module | Primary tables |
+|--------|----------------|
+| **auth** | `users` (eligibility), `otp_sessions` |
+| **users** | `users` (profile), `device_tokens` |
+| **config** | `buildings`, `app_config`, `chat_messages` |
+| **squads** | `squads`, `squad_members`, `squad_join_requests` |
+| **surveys** | `surveys`, `survey_responses`, `gallery_items`, `notifications` |
 
 ---
 
@@ -49,7 +50,7 @@ For API-level auth and roles, see [`../security/SECURITY.md`](../security/SECURI
 | `user_profiles.building_name`, `governorate` | Join `buildings` via `building_id` FK |
 | `user_profiles.squad_id` | Read from `squad_members` (no denormalized copy) |
 | `squad_members.first_name`, `last_name`, `building`, `open_to_travel` | Join `users` + `buildings` at read time |
-| `squad_join_requests` name/building snapshots | Join `users` at read time |
+| `squad_join_requests` name/building snapshots | Join `users` at read time. Rows for a user are **deleted** when that user joins a squad (accept join, accept invite, create squad, or admin assign). |
 | `survey_responses.governorate` | Derive from user → building or squad |
 | `gallery_items.governorate` | Derive from squad or user |
 
@@ -129,7 +130,7 @@ erDiagram
 
 ### Other tables
 
-See `docker/mariadb/init/02-schema-reference.sql` for `buildings`, `squads`, `squad_join_requests`, `surveys`, `survey_responses`, `gallery_items`, `notifications`, `device_tokens`, `app_config`.
+Schema for remaining domain tables (`buildings`, `squads`, `squad_join_requests`, surveys, gallery, notifications, device tokens, app config) lives in the corporate `my_boss` database.
 
 ---
 
@@ -151,11 +152,7 @@ MARIADB_USER=myboss
 MARIADB_PASSWORD=changeme
 ```
 
-**Demo + MariaDB:**
-
-```bash
-docker compose -f docker/docker-compose.demo.yml --profile with-mariadb up -d --build
-```
+Use the shared corporate MySQL (`MYSQL_*`). Do not start a local MariaDB container.
 
 ---
 
@@ -189,19 +186,15 @@ Shared demo identifiers live in `myboss-backend/libs/common/src/demo/demo-seed.c
 
 In-memory state mutates during testing. Restore seed data with:
 
-```bash
-./scripts/reset-demo-data.sh
-```
+Shared MySQL is the source of truth. Restart the API container if you need a clean boot; do not run a local MariaDB.
 
-(from `myboss-platform`)
-
-| Service | Reset on restart | Notes |
-|---------|------------------|-------|
-| auth-service | ✅ `AuthRepository.resetDemoSeed()` | Eligible users in `users` when DB enabled |
-| user-service | ✅ `UsersRepository.resetDemoSeed()` | Profiles in shared `users` table |
-| squad-service | ✅ `SquadsRepository.resetDemoSeed()` | Squads, members, join requests |
-| config-service | ❌ | Admin config changes persist until restart |
-| survey-service | ⚠️ partial | Survey catalog/responses re-seed on boot; gallery/notifications may persist on disk |
+| Module | Reset on restart | Notes |
+|--------|------------------|-------|
+| auth | ✅ `AuthRepository.resetDemoSeed()` | Eligible users in `users` when DB enabled |
+| users | ✅ `UsersRepository.resetDemoSeed()` | Profiles in shared `users` table |
+| squads | ✅ `SquadsRepository.resetDemoSeed()` | Squads, members, join requests |
+| config | ❌ | Admin config changes persist until restart |
+| surveys | ⚠️ partial | Survey catalog/responses re-seed on boot; gallery/notifications may persist on disk |
 
 ---
 

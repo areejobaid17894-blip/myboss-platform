@@ -4,7 +4,14 @@
 **App:** Flutter employee app (`myboss-mobile`)  
 **Stack:** Flutter **3.35.7**, Dart **3.9.2+**, BLoC, Clean Architecture
 
-Full feature coverage: [`../EMPLOYEE_JOURNEY_COVERAGE.md`](../EMPLOYEE_JOURNEY_COVERAGE.md)
+Backend: **single API on :3001**. See [`../INSTALL.md`](../INSTALL.md).
+
+## Flutter runs independently
+
+| Layer | How it runs |
+|-------|-------------|
+| Backend APIs | Docker (`myboss-platform`) |
+| Employee Flutter app | **Local only** — Android Studio / `flutter run`. **Not** a Docker Compose service |
 
 ---
 
@@ -13,15 +20,16 @@ Full feature coverage: [`../EMPLOYEE_JOURNEY_COVERAGE.md`](../EMPLOYEE_JOURNEY_C
 | Tool | Version | Install |
 |------|---------|---------|
 | **Android Studio** | Latest stable | [developer.android.com/studio](https://developer.android.com/studio) |
-| **Flutter** | **3.35.7** | [FVM](https://fvm.app) — see `myboss-mobile/.fvmrc` |
+| **Flutter** | **3.35.7** | [FVM](https://fvm.app) — see `myboss-mobile/.fvmrc` — or a local 3.35.7 install on `PATH` |
 | **Dart** | **≥3.9.2** | Bundled with Flutter |
-| **Backend** | Running | See [`../devops/DEVOPS.md`](../devops/DEVOPS.md) |
+| **Backend** | Running in Docker | See [`../INSTALL.md`](../INSTALL.md) / [`../devops/DEVOPS.md`](../devops/DEVOPS.md) |
 
 Verify setup:
 
 ```bash
 fvm flutter doctor
 fvm flutter --version   # should show 3.35.7
+# Windows without FVM: flutter --version
 ```
 
 ---
@@ -54,27 +62,29 @@ myboss-mobile/lib/
 
 ---
 
-## 4. Start backend (required)
+## 4. Start backend first (Docker — required)
 
-### Option A — Docker demo (recommended for QA)
+Flutter does **not** start APIs.
+
+### Option A — Docker demo (recommended)
 
 ```bash
 cd myboss-platform
 cp .env.example .env
-./scripts/deploy-demo-server.sh 127.0.0.1
-./scripts/verify-mobile-api.sh 127.0.0.1
+docker compose up -d --build
+curl http://127.0.0.1:3001/api/v1/health
 ```
 
 Health: `curl http://127.0.0.1:3001/api/v1/health`
 
-### Option B — Local dev (no Docker)
+### Option B — Local Nest (no Docker)
 
 ```bash
 cd myboss-backend
 npm install && npm run start:dev
 ```
 
-Services on ports **3001–3006**.
+Single API on **:3001**.
 
 ### Option C — Apigee only (no local backend)
 
@@ -82,92 +92,106 @@ Use when Apigee proxies are already wired to a remote VM.
 
 ---
 
-## 5. Run the app
+## 5. Run the Flutter app (separate process)
 
-### Terminal — Apigee
+Confirm backend first: `curl http://127.0.0.1:3001/api/v1/health`
+
+### Web (Windows) — independent of Docker
+
+```powershell
+cd myboss-mobile
+flutter run -d web-server --web-hostname=127.0.0.1 --web-port=8092 `
+  --dart-define=ENV=development --dart-define=API_HOST=localhost --dart-define=DEMO_MODE=false
+# → http://127.0.0.1:8092
+```
+
+Stop with `q` in that terminal. Docker APIs keep running.
+
+### Android emulator
 
 ```bash
 cd myboss-mobile
 fvm flutter pub get && fvm flutter gen-l10n
 fvm flutter run \
-  --dart-define=GATEWAY_ORIGIN=https://api-demo.orange.com \
-  --dart-define=ENV=demo \
-  --dart-define=DEMO_MODE=true
-```
-
-### Terminal — local Docker backend
-
-```bash
-fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
+  --dart-define=ENV=development \
+  --dart-define=API_HOST=10.0.2.2 \
+  --dart-define=DEMO_MODE=false
 ```
 
 ### Android Studio
 
 1. Open `lib/main.dart`
 2. **Run → Edit Configurations**
-3. Add to **Additional run args:** `--dart-define=DEMO_MODE=true`
+3. **Additional run args:**  
+   `--dart-define=ENV=development --dart-define=API_HOST=10.0.2.2 --dart-define=DEMO_MODE=false`
 4. Click green **Run ▶**
 
 ---
 
 ## 6. API connection modes
 
-| Mode | Command | Backend |
-|------|---------|---------|
-| **Apigee demo** | `GATEWAY_ORIGIN=https://api-demo.orange.com` + `ENV=demo` | Orange Apigee |
-| **Dev emulator** | `ENV=development` | Direct ports via `10.0.2.2:3001–3006` |
-| **Dev physical device** | `ENV=development` + `GATEWAY_ORIGIN=http://<lan-ip>:3001` | LAN direct ports |
+| Mode | dart-defines | Host used |
+|------|--------------|-----------|
+| **Web on same PC** | `ENV=development` `API_HOST=localhost` | `localhost:3001` |
+| **Android emulator** | `ENV=development` `API_HOST=10.0.2.2` | Host machine via `10.0.2.2` |
+| **Physical device (Wi‑Fi)** | `ENV=development` `API_HOST=<LAN-IP>` | Your PC LAN IP |
+| **Physical device (cellular)** | `ENV=development` `API_HOST=<public-IP>` | Host public IP; firewall/router must publish **3001** |
+| **Apigee (optional)** | build scripts / gateway builds | Orange Apigee |
 
-Configuration: `lib/core/config/env_config.dart`
-
-**Emulator with local Docker:**
-
-```bash
-fvm flutter run --dart-define=ENV=development --dart-define=DEMO_MODE=true
-```
+Configuration: `lib/core/config/env_config.dart` + `dev_api_host.dart`
 
 ---
 
 ## 7. Physical Android device
 
-### Apigee APK (recommended — works on mobile data)
+### LAN APK (same Wi‑Fi as your PC / demo server)
 
 ```bash
-cd myboss-mobile
-./build-apigee-android.sh
-# → build/android-dist/myboss-apigee-api-demo.orange.com.apk
-```
-
-### LAN APK (same Wi‑Fi as demo server)
-
-```bash
-./build-local-android.sh
-# → build/android-dist/myboss-demo-<lan-ip>.apk
+flutter build apk --release \
+  --dart-define=ENV=development \
+  --dart-define=API_HOST=<your-lan-ip> \
+  --dart-define=API_PORT=3001 \
+  --dart-define=DEMO_MODE=false \
+  --dart-define=PUSH_ENABLED=true
 ```
 
 ### Development run (USB)
 
 ```bash
-ipconfig getifaddr en0   # Mac LAN IP
+# Windows: ipconfig → IPv4 address
+# Mac: ipconfig getifaddr en0
 
 fvm flutter run \
   --dart-define=ENV=development \
-  --dart-define=DEMO_MODE=true \
-  --dart-define=GATEWAY_ORIGIN=http://<lan-ip>:3001
+  --dart-define=API_HOST=<lan-ip> \
+  --dart-define=DEMO_MODE=false
+```
+
+### Cellular APK (only if `:3001` is published on a public IP)
+
+```bash
+flutter build apk --release \
+  --dart-define=ENV=development \
+  --dart-define=API_HOST=<public-ip> \
+  --dart-define=API_PORT=3001 \
+  --dart-define=DEMO_MODE=false
 ```
 
 ---
 
-## 8. Build scripts
+## 8. Release APK
 
-| Script | Output |
-|--------|--------|
-| `build-apigee-android.sh` | Apigee demo APK |
-| `build-local-android.sh` | LAN APK |
-| `build-external-android.sh` | Apigee APK |
-| `run-local-web.sh` | Local dev web |
-| `run-android-emulator.sh` | Emulator helper |
-| `build-ios-demo.sh` | iOS demo build |
+```bash
+cd myboss-mobile
+flutter build apk --release \
+  --dart-define=ENV=development \
+  --dart-define=API_HOST=<host> \
+  --dart-define=API_PORT=3001 \
+  --dart-define=DEMO_MODE=false \
+  --dart-define=PUSH_ENABLED=true
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
 
 ---
 
@@ -182,7 +206,7 @@ fvm flutter run \
 
 | Field | Value |
 |-------|-------|
-| OTP | Auto-filled when `DEMO_MODE=true` |
+| OTP | Emailed via Orange Maxit (`DEMO_MODE=false` — no auto-fill) |
 
 ---
 
@@ -195,9 +219,9 @@ fvm flutter run \
 | Squad | Browse all + governorate filter; hub when no squad |
 | Live chat | FAB on all tabs; **squad members only** — [`../api/CHAT_API.md`](../api/CHAT_API.md) |
 | Gallery | Upload when in squad; admin announcement cards |
-| Surveys | Dynamic segments; blocked without squad |
+| Surveys | Dynamic segments; blocked without squad. Cached on Home (online) so they can be opened and filled **offline**; close saves a draft. See [`OFFLINE_SURVEYS.md`](OFFLINE_SURVEYS.md) |
 | Reports | Squad members only |
-| Notifications | In-app inbox (demo — no OS push yet) |
+| Notifications | In-app inbox + FCM when `PUSH_ENABLED=true` and the API has a live Firebase key |
 
 ---
 
@@ -216,10 +240,13 @@ fvm flutter analyze
 | Problem | Fix |
 |---------|-----|
 | Network error on login | Backend not running — `curl http://127.0.0.1:3001/api/v1/health` |
+| Looking for Flutter in Docker | Flutter is **not** a Compose service — run Android Studio or `flutter run` locally |
+| OTP returns to login | Update `myboss-mobile`; hard-refresh `:8092`. Wrong OTP should stay on OTP screen |
 | Emulator cannot reach API | Use `ENV=development` (uses `10.0.2.2`) |
-| Physical device fails | Same Wi‑Fi; correct LAN IP in `GATEWAY_ORIGIN` |
-| Apigee unreachable | Use local dev mode or `./build-local-android.sh` |
+| Physical device fails | Same Wi‑Fi; correct LAN IP in `API_HOST` |
+| API unreachable | Same Wi‑Fi; correct LAN IP in `API_HOST` |
 | Old APK still fails | Uninstall app before installing new APK |
+| Service will not open offline | Open Home **once online** after install so schemas cache. See [`OFFLINE_SURVEYS.md`](OFFLINE_SURVEYS.md) |
 | Gradle sync failed | File → Invalidate Caches; `fvm flutter clean && fvm flutter pub get` |
 
 ---
@@ -231,6 +258,7 @@ fvm flutter analyze
 | [`../devops/DEVOPS.md`](../devops/DEVOPS.md) | Deploy backend |
 | [`../deployment/TESTING.md`](../deployment/TESTING.md) | QA checklist |
 | [`../api/API_OVERVIEW.md`](../api/API_OVERVIEW.md) | REST endpoints |
+| [`OFFLINE_SURVEYS.md`](OFFLINE_SURVEYS.md) | Offline cache + draft QA |
 | [`../../myboss-mobile/README.md`](../../myboss-mobile/README.md) | Quick reference |
 
 ---

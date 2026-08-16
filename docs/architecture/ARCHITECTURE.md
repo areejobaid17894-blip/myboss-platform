@@ -1,15 +1,18 @@
 # my boss app — Architecture Documentation
 
+> **Current local/runtime summary:** see [`../../README.md`](../../README.md).  
+> Local clients call one NestJS API on **:3001** (no Apigee). Data store: **MySQL 8** — development and production share `my_boss` on `10.1.165.105:3308`; preprod (staging) uses a dedicated DB. OTP: development and production use production Maxit; preprod uses preprod SSO/email. See [`../deployment/STAGES.md`](../deployment/STAGES.md).
+
 ## 1. System Context
 
 The platform serves two user groups:
 
 | User Group | Application | Access |
 |---|---|---|
-| Employees | Flutter Mobile App | Mobile only |
+| Employees | Flutter Mobile App | Mobile / employee web |
 | Administrators | Web Admin Portal | Browser |
 
-All client applications communicate with backend microservices through **Google Apigee** (external API gateway, configured in a later phase).
+Local and current demo path: clients talk to the **single NestJS API** on `:3001`. Apigee may be used later as an external gateway in some deployments.
 
 ## 2. High-Level Architecture
 
@@ -18,48 +21,37 @@ All client applications communicate with backend microservices through **Google 
 │                        Client Layer                          │
 │  ┌─────────────────────┐    ┌──────────────────────────┐    │
 │  │  Flutter Mobile App │    │  Admin Portal (React)    │    │
-│  │  BLoC + Clean Arch  │    │  Feature-based modules   │    │
 │  └──────────┬──────────┘    └────────────┬─────────────┘    │
 └─────────────┼──────────────────────────────┼──────────────────┘
               │                              │
               └──────────────┬───────────────┘
-                             │ HTTPS
-                    ┌────────▼────────┐
-                    │  Google Apigee  │  Rate limiting, analytics,
-                    │  (External GW)  │  OAuth validation, routing
-                    └────────┬────────┘
+                             │ HTTP :3001 /api/v1
+┌────────────────────────────▼─────────────────────────────────┐
+│              Single NestJS API (myboss-api)                  │
+│  auth · users · config · squads · surveys · gallery · push   │
+└────────────────────────────┬─────────────────────────────────┘
                              │
 ┌────────────────────────────▼─────────────────────────────────┐
-│                     Service Layer (NestJS)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐   │
-│  │ Auth Service │  │ User Service │  │  Config Service   │   │
-│  │  Port 3001   │  │  Port 3002   │  │   Port 3003       │   │
-│  └──────┬───────┘  └──────┬───────┘  └────────┬──────────┘   │
-└─────────┼─────────────────┼────────────────────┼─────────────┘
-          │                 │                    │
-┌─────────▼─────────────────▼────────────────────▼─────────────┐
-│                     Data Layer                                │
-│  ┌──────────────┐  ┌──────────────┐                          │
-│  │  MariaDB 11  │  │    Redis     │                          │
-│  │  (myboss DB) │  │  (Cache/Sess)│                          │
-│  └──────────────┘  └──────────────┘                          │
+│  MySQL 8 — database my_boss (shared across stages)            │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## 3. Backend — Microservices
+## 3. Backend — Single API
 
-### 3.1 Service Boundaries
+Former microservice folders still exist in `myboss-backend` as Nest modules, compiled into **one process** (`myboss-api`, port **3001**).
 
-| Service | Responsibility | Port |
+### 3.1 Module boundaries
+
+| Module | Responsibility | Port |
 |---|---|---|
-| **auth-service** | Authentication, JWT, OAuth2, demo 2FA | 3001 |
-| **user-service** | User CRUD, profiles, roles | 3002 |
-| **config-service** | App configuration, business settings, squad limits | 3003 |
+| **auth** | Authentication, JWT, Orange OTP | 3001 (same process) |
+| **users** | User CRUD, profiles, roles | 3001 |
+| **config** | App configuration, business settings, squad limits | 3001 |
+| **squads** | Squads, members, join requests, invitations | 3001 |
+| **surveys** | Surveys, gallery, in-app notifications | 3001 |
+| **push** | FCM dispatch | 3001 |
 
-Each service is:
-- Independently deployable
-- Independently testable
-- Owns its tables logically, but all services share **one MariaDB database** (`myboss`) with real foreign keys — see [`../database/DATABASE.md`](../database/DATABASE.md)
+Modules are compiled into **one Docker image** (`myboss-api`). They remain independently testable in `myboss-backend`. All modules share **one MySQL database** (`my_boss`) with real foreign keys — see [`../database/DATABASE.md`](../database/DATABASE.md).
 
 ### 3.2 Internal Architecture (per service)
 
@@ -153,6 +145,10 @@ lib/
 - RTL/LTR automatic switching based on locale
 - No hardcoded user-facing strings
 
+### 4.4 Offline surveys
+
+On Home (online) the app caches full survey schemas plus the last profile/squad. Offline, employees can open those services, fill them, and close to save a draft. Queued submissions flush when Home loads online. See [`../mobile/OFFLINE_SURVEYS.md`](../mobile/OFFLINE_SURVEYS.md).
+
 ## 5. Admin Portal — the Boss Admin Console (V2)
 
 ### 5.1 Architecture
@@ -183,8 +179,12 @@ src/
 |--------------|---------|
 | List squads with members | `GET /squads/admin/all` |
 | Assign employee | `POST /squads/admin/assign` → writes `squad_members` (same shared DB) |
+| Rename / make leader / remove / delete | `PUT/DELETE /squads/admin/:id…` |
+| Leader invitations monitor | `GET /squads/admin/invites` · Cancel `DELETE /squads/admin/:id/invites/:requestId` |
 | Save destination | `PUT /squads/:id/destination` |
-| Users / surveys / gallery / notifications | user-service, survey-service |
+| Users / surveys / gallery / notifications | Same API origin `:3001` |
+
+Seat reservation, join cleanup, and invite rules: [`../api/SQUADS.md`](../api/SQUADS.md).
 
 ## 6. Security Architecture
 
@@ -211,7 +211,7 @@ Configuration is loaded from environment variables — never hardcoded.
 
 ## 8. CI/CD Pipeline
 
-See [`docs/cicd/CI_CD.md`](../cicd/CI_CD.md) for full pipeline details.
+See [`../devops/DEVOPS.md`](../devops/DEVOPS.md) and [`.gitlab-ci.yml`](../../.gitlab-ci.yml) for pipeline details.
 
 Each application has independent pipelines:
 - Lint → Test → Build → Deploy (Demo)

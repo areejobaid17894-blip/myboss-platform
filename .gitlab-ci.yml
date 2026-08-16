@@ -1,13 +1,17 @@
 stages:
   - verify
 
-verify-docs:
+# Deploy is owned by DevOps CI/CD (build myboss-api + myboss-admin, inject GitLab vars, docker compose up).
+verify:
   stage: verify
   image: alpine:3.20
   script:
-    - test -f docs/README.md
-    - test -f docker/docker-compose.demo.yml
-    - test -f scripts/deploy-demo-server.sh
+    - test -f docker-compose.yml
+    - test -f docs/INSTALL.md
+    - test -f docs/devops/DEVOPS.md
+    - test -f docs/devops/gitlab-development.env.example
+    - test -f docs/devops/gitlab-preprod.env.example
+    - test -f docs/devops/gitlab-production.env.example
     - echo "Platform structure OK"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

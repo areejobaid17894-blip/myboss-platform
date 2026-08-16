@@ -26,39 +26,49 @@ Each email request uses a **new random UUID** for `userId` (not the employee id)
 
 ---
 
-## API endpoints (internal VPN)
+## API endpoints
 
-| Step | URL |
-|------|-----|
-| SSO token | `http://10.4.3.27:9001/sso/openid-connect/v1/token` |
-| Send email | `http://10.4.3.27:9001/maxit/notification/v1/email/send` |
+See [`STAGES.md`](STAGES.md) for which stage uses which URLs.
 
-**Requirements:** machine running auth-service must reach `10.4.3.27:9001` (Orange VPN / internal network).
+| Stage | When | SSO token | Send email | Database |
+|-------|------|-----------|------------|----------|
+| **Development + production** | `APP_ENV=development` or `production`, or `ORANGE_OTP_ENV=production` | `http://10.4.3.27:9001/sso/openid-connect/v1/token` | `http://10.4.3.27:9001/maxit/notification/v1/email/send` | Production MySQL (`10.1.165.105:3308` / `my_boss`) |
+| **Preprod (staging)** | `APP_ENV=preprod` or `ORANGE_OTP_ENV=preprod` | `http://10.1.112.95:9001/sso/openid-connect/v1/token` | `http://preprod-notification.xyz.jt.jtgroup/email/send` | Dedicated preprod DB (fill `MYSQL_*` when provided) |
+
+Explicit `ORANGE_SSO_TOKEN_URL` / `ORANGE_EMAIL_API_URL` override the defaults.
+
+**Hosts (preprod email hostname only)** — Windows: `C:\Windows\System32\drivers\etc\hosts`:
+
+```
+10.1.112.95 preprod-notification.xyz.jt.jtgroup
+```
+
+Docker Compose maps that hostname inside `myboss-api` via `extra_hosts`. Production Maxit is `10.4.3.27:9001`.
 
 ---
 
 ## Environment variables
 
-Add to **`myboss-platform/.env`** (Docker reads this for auth-service):
+Add to **`myboss-platform/.env`** (copy `.env.development.example` or `.env.production.example`; Docker reads `.env`):
 
 ```env
-# Enable Orange email OTP
 OTP_PROVIDER=orange
 TWO_FA_DEMO_ENABLED=false
+ORANGE_OTP_ENV=production
 
-# SSO (client_credentials)
 ORANGE_SSO_TOKEN_URL=http://10.4.3.27:9001/sso/openid-connect/v1/token
 ORANGE_SSO_CLIENT_ID=apigee-app
-ORANGE_SSO_CLIENT_SECRET=<from Orange team>
+ORANGE_SSO_CLIENT_SECRET=<production secret from Orange>
 ORANGE_SSO_API_KEY=<SSO apiKey header>
 
-# Email send
 ORANGE_EMAIL_API_URL=http://10.4.3.27:9001/maxit/notification/v1/email/send
 ORANGE_EMAIL_CLIENT_NAME=sajelni
 ORANGE_EMAIL_CHANNEL=survey_app
 ORANGE_EMAIL_TYPE=blank
 ORANGE_EMAIL_API_KEY=<email apiKey header>
 ```
+
+For **preprod / staging** copy `.env.preprod.example` → `.env`, set `ORANGE_OTP_ENV=preprod`, and fill the dedicated MySQL when DBA provides it. URLs: [`STAGES.md`](STAGES.md).
 
 | Variable | Header / body | Notes |
 |----------|---------------|-------|
@@ -77,16 +87,13 @@ ORANGE_EMAIL_API_KEY=<email apiKey header>
 cd myboss-platform
 cp .env.example .env
 # Edit .env — set Orange OTP variables above (secrets from Orange team)
-
-./scripts/deploy-demo-server.sh 127.0.0.1
-# Recreate auth if already running:
-docker compose -f docker/docker-compose.demo.yml up -d --force-recreate auth-service
+docker compose up -d --build
+curl http://127.0.0.1:3001/api/v1/health
 ```
 
 Verify SSO + sign-in:
 
 ```bash
-./scripts/verify-orange-otp.sh
 curl -X POST http://127.0.0.1:3001/api/v1/auth/sign-in \
   -H 'Content-Type: application/json' \
   -d '{"email":"your.name@orange.com"}'
@@ -97,35 +104,39 @@ curl -X POST http://127.0.0.1:3001/api/v1/auth/sign-in \
 
 ## Manual curl (debug)
 
-**1. SSO token**
+These match `orange-sso-token.service.ts` and `orange-email-notification.service.ts`. Requires VPN to `10.4.3.27`. Substitute secrets from `myboss-platform/.env` (`ORANGE_SSO_*`, `ORANGE_EMAIL_API_KEY`). Do **not** commit secrets.
+
+OTP expiry in the email body is **10 minutes** (`OTP_EXPIRY_SECONDS = 600`).
+
+**1. SSO token** (production — used by development and production)
 
 ```bash
 curl -X POST 'http://10.4.3.27:9001/sso/openid-connect/v1/token' \
-  -H 'apiKey: YOUR_SSO_API_KEY' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H 'Accept: application/json;charset=utf-8' \
-  -d 'grant_type=client_credentials&client_id=apigee-app&client_secret=YOUR_CLIENT_SECRET'
+  -H 'apiKey: YOUR_SSO_API_KEY' \
+  -d 'grant_type=client_credentials&client_id=apigee-app&client_secret=YOUR_PRODUCTION_CLIENT_SECRET'
 ```
 
-**2. Send email**
+**2. Maxit email** (production)
 
 ```bash
 curl -X POST 'http://10.4.3.27:9001/maxit/notification/v1/email/send' \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H 'client_name: sajelni' \
-  -H 'apiKey: YOUR_EMAIL_API_KEY' \
   -H 'Content-Type: application/json;charset=utf-8' \
   -H 'Accept: application/json;charset=utf-8' \
+  -H 'client_name: sajelni' \
+  -H 'apiKey: YOUR_EMAIL_API_KEY' \
+  -H 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE' \
   -d '{
     "userId": "00000000-0000-0000-0000-000000099499",
     "email": "employee@orange.com",
     "type": "blank",
     "channel": "survey_app",
-    "data": "{\"title\":\"MyBoss verification code\",\"content\":\"<p>Your code is: <b>123456</b></p>\"}"
+    "data": "{\"title\":\"MyBoss verification code\",\"content\":\"<p>Your verification code is: <b>123456</b></p><p>This code expires in 10 minutes.</p>\"}"
   }'
 ```
 
-Use a **new UUID** for `userId` on each request (auth-service does this automatically).
+Preprod curls use `http://10.1.112.95:9001/sso/openid-connect/v1/token` and `http://preprod-notification.xyz.jt.jtgroup/email/send` with the **preprod** client secret.
 
 ---
 
@@ -152,7 +163,7 @@ Email failure falls back to console log + `demoOtpCode` in API response.
 ## Logs
 
 ```bash
-docker logs myboss-auth 2>&1 | grep 'Orange OTP'
+docker logs myboss-api 2>&1 | grep 'Orange OTP'
 ```
 
 Look for:

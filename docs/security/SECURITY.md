@@ -39,15 +39,25 @@ Cross-service calls (auth→user, squad→user, survey→user profile check)
 - All routes protected unless `@Public()` on handler/class
 - Invalid/expired token → Orange code **41** or **42**
 
-### 2FA (demo)
+### 2FA (OTP)
 
-| Setting | Demo | Production |
-|---------|------|------------|
-| Provider | In-memory OTP | Email/SMS provider TBD |
-| Flag | `TWO_FA_DEMO_ENABLED=true` | Disable demo; wire real provider |
-| Mobile | OTP auto-fill when `DEMO_MODE=true` | Never auto-fill |
+| Setting | Local / demo / production |
+|---------|---------------------------|
+| Provider | Orange SSO + Maxit email (`OTP_PROVIDER=orange`) |
+| Flags | `TWO_FA_DEMO_ENABLED=false`, `ORANGE_OTP_ENABLED=true`, `ORANGE_OTP_FALLBACK_DEMO=false` |
+| Wrong OTP message | **Invalid or expired verification code** (not “Invalid email or password”) |
+| Mobile auto-fill | Only if explicitly enabled for a demo build — never in production |
 
 Endpoint: `POST /auth/api/v1/auth/verify-2fa` (Orange naming — not `verify-otp`).
+
+Local without VPN (optional fallback only):
+
+```env
+ORANGE_OTP_FALLBACK_DEMO=true
+TWO_FA_DEMO_ENABLED=true
+```
+
+See [`../deployment/ORANGE_OTP_SETUP.md`](../deployment/ORANGE_OTP_SETUP.md).
 
 ### Admin sign-in
 
@@ -95,8 +105,8 @@ X-Internal-Service-Token: {INTERNAL_SERVICE_TOKEN}
 
 | Route | Guard | Caller |
 |-------|-------|--------|
-| `POST /user/api/v1/users/ensure` | `InternalServiceGuard` | auth-service (post sign-in) |
-| `PUT /user/api/v1/users/:id/squad` | `InternalOrAdminGuard` | squad-service sync **or** admin JWT |
+| `POST /users/ensure` | `InternalServiceGuard` | auth module (post sign-in) |
+| `PUT /users/:id/squad` | `InternalOrAdminGuard` | squad module sync **or** admin JWT |
 
 **Production:** Do not expose these on public Apigee products without IP allowlist + token policy. Default demo token: `demo-internal-sync` — **rotate in production**.
 
@@ -162,14 +172,9 @@ Server-side stack traces logged only for 5xx. Clients never receive raw exceptio
 
 ```bash
 # Unauthenticated protected route → Orange 401
-curl -s http://127.0.0.1:8090/squad/api/v1/squads/stats | jq .
+curl -s http://127.0.0.1:3001/api/v1/squads/stats
 
-# Full governance smoke test
-./scripts/verify-mobile-api.sh 127.0.0.1 --gateway
-./scripts/verify-localhost.sh
-
-# Security headers (example)
-curl -sI http://127.0.0.1:8090/health | grep -i x-frame
+curl http://127.0.0.1:3001/api/v1/health
 ```
 
 ---
@@ -184,7 +189,7 @@ curl -sI http://127.0.0.1:8090/health | grep -i x-frame
 | Account lockout | Not implemented | Define policy — see [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md) |
 | Penetration test | Not run | Schedule before go-live |
 | Secret management | `.env` files | Vault / GCP Secret Manager / K8s secrets |
-| MariaDB persistence | In-memory demo by default | Set `DB_ENABLED=true`; single `myboss` DB; encrypt at rest |
+| MySQL persistence | Shared `my_boss` | Keep `DB_ENABLED=true`; encrypt at rest |
 | Admin token storage | `localStorage` | Consider HttpOnly cookies + CSRF |
 | Certificate pinning | Not implemented | Mobile production requirement TBD |
 | Internal sync routes | Service token | IP allowlist on Apigee; rotate token |
@@ -205,17 +210,17 @@ curl -sI http://127.0.0.1:8090/health | grep -i x-frame
 - [ ] Security headers present on API and gateway responses
 - [ ] Mobile uses `flutter_secure_storage` on native release builds
 - [ ] Demo 2FA clearly marked non-production
-- [ ] Admin default password changed on shared demo servers
-- [ ] Open items tracked in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md)
+- [ ] Admin default password changed on shared demo/prod servers
+- [ ] Production uses Orange OTP with `TWO_FA_DEMO_ENABLED=false`
 
 ---
 
 ## 10. Known demo limitations
 
-These are **acceptable for demo** but must be addressed for production:
+These are **acceptable for local/demo tooling** but must stay off in production:
 
-1. In-memory data stores (no persistent DB encryption yet)
-2. Demo OTP visible in API/logs when `TWO_FA_DEMO_ENABLED=true`
+1. Shared corporate MySQL — keep `MYSQL_CONNECTION_LIMIT=1`; do not flood reconnects
+2. Demo OTP visible in API/logs only when `TWO_FA_DEMO_ENABLED=true` / `ORANGE_OTP_FALLBACK_DEMO=true` (keep **false** for demo/prod servers)
 3. Web mobile stores tokens in localStorage (demo LAN/tunnel only)
 4. No application-level rate limiting (delegated to Apigee)
 5. Chat messages: in-memory when `DB_ENABLED=false`; persisted in `chat_messages` when DB enabled
