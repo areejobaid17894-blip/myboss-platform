@@ -1,124 +1,53 @@
-# DevOps — how to run and what CI/CD should deploy
+# DevOps — Docker images (backend + admin only)
 
-**Scope:** two containers only.
+**Do not use `myboss-platform` for deploy.** Clone and build:
 
-| Container | Image source | Port | Role |
-|-----------|--------------|------|------|
-| `myboss-api` | `myboss-backend/docker/Dockerfile` | **3001** | Employee + admin API |
-| `myboss-admin` | `myboss-admin/docker/Dockerfile` | **8081** | Admin web UI |
+| Repo | Dockerfile | Container port |
+|------|------------|----------------|
+| https://github.com/areejobaid17894-blip/myboss-backend | `Dockerfile` (repo root) | **80** (`APP_PORT`; do not set GitLab `PORT`) |
+| https://github.com/areejobaid17894-blip/myboss-admin | `docker/Dockerfile` | **80** (`APP_PORT`; do not set GitLab `PORT`) |
 
-Mobile (Flutter) is **not** deployed with this stack.  
-This repo does **not** ship deploy scripts. **DevOps CI/CD** builds the two images, injects GitLab variables, and starts Compose (or equivalent).
+GitLab CI/CD Variables are injected as **container environment at runtime**. Images contain no application secrets and no public URLs.
 
-Laptop run: [`INSTALL.md`](../INSTALL.md).  
-Stages: [`../deployment/STAGES.md`](../deployment/STAGES.md).  
-Variable list: [`../deployment/ENV_AND_GITLAB_VARIABLES.md`](../deployment/ENV_AND_GITLAB_VARIABLES.md).
+Canonical templates: [`../../myboss-backend/docs/gitlab/README.md`](https://github.com/areejobaid17894-blip/myboss-backend/-/blob/dev/docs/gitlab/README.md)
 
----
+Copies in this repo (for reference only):
 
-## Repos
+| Stage | File |
+|-------|------|
+| Development | [`gitlab-development.env.example`](gitlab-development.env.example) |
+| Preprod | [`gitlab-preprod.env.example`](gitlab-preprod.env.example) |
+| Production | [`gitlab-production.env.example`](gitlab-production.env.example) |
 
-| Clone | GitLab |
-|-------|--------|
-| `myboss-backend` | https://github.com/areejobaid17894-blip/myboss-backend |
-| `myboss-admin` | https://github.com/areejobaid17894-blip/myboss-admin |
-| `myboss-platform` | https://github.com/areejobaid17894-blip/myboss-platform |
+Spreadsheet: [`GITLAB_VARIABLES.csv`](GITLAB_VARIABLES.csv)
 
-`.env` is **never** in git. Production / preprod / development values come from **GitLab → Settings → CI/CD → Variables**.
+**Connectivity:** [`CONNECTION_MATRIX.md`](CONNECTION_MATRIX.md)
 
 ---
 
-## What CI/CD should do
-
-1. Checkout the three repos as siblings (same parent folder).
-2. Materialize `myboss-platform/.env` from GitLab variables (or a File variable `MYBOSS_RUNTIME_ENV`).
-3. From `myboss-platform`:
+## Docker build
 
 ```bash
-docker compose up -d --build
+# myboss-backend
+docker build -f Dockerfile -t myboss-api .
+
+# myboss-admin
+docker build -f docker/Dockerfile -t myboss-admin .
 ```
 
-4. Health: `GET http://127.0.0.1:3001/api/v1/health` → `"status":"ok"`.
-5. Admin: `http://<DEMO_HOST>:8081/login`.
-
-Changing `DEMO_HOST` requires a **rebuild** of `myboss-admin` (Vite bakes the API URL).
-
-Compose file: [`docker-compose.yml`](../../docker-compose.yml) (repo root).
+`sh: tsc: not found` → builder installs devDependencies (`NODE_ENV=development`, `npm install --include=dev`). Not a `.dockerignore` gap.
 
 ---
 
-## GitLab variable templates
+## Runtime
 
-| Stage | Run file | GitLab file |
-|-------|----------|-------------|
-| Development | [`.env.development.example`](../../.env.development.example) | [`gitlab-development.env.example`](gitlab-development.env.example) |
-| Production | [`.env.production.example`](../../.env.production.example) | [`gitlab-production.env.example`](gitlab-production.env.example) |
-| Preprod (staging) | [`.env.preprod.example`](../../.env.preprod.example) | [`gitlab-preprod.env.example`](gitlab-preprod.env.example) |
+- API: all `MYSQL_*`, Orange OTP, `CORS_ALLOWED_ORIGINS`, `JWT_*`, etc. from GitLab.
+- Admin: `VITE_API_URL`, `VITE_APP_ENV` (served as `/runtime-config.js`). No Docker build args.
+- Preprod / production GitLab: **no localhost**. Do not set `PORT` or `API_INTERNAL_URL`. K8s uses `APP_PORT=80`.
 
-Same **key names** on every stage. Mask secrets. Prefer **group** `myboss` variables for `MYSQL_*`, `JWT_SECRET`, and Orange OTP keys.
+Health: API `GET /api/v1/health` · Admin `GET /health`
 
----
-
-## Host requirements
-
-| Need | Value |
-|------|--------|
-| OS | Linux (Ubuntu 22.04+) |
-| Docker | 24+ with Compose v2 |
-| MySQL (dev + prod) | `10.1.165.105:3308` database `my_boss` |
-| MySQL (preprod) | Dedicated DB — fill `MYSQL_*` in `.env.preprod.example` when DBA provides it |
-| OTP (dev + prod) | `10.4.3.27:9001` |
-| OTP (preprod / staging) | `10.1.112.95:9001` + hosts `10.1.112.95 preprod-notification.xyz.jt.jtgroup` |
-| Publish | `3001`, `8081` (or load balancer → these) |
-| RAM | 4 GB min · 8 GB recommended |
-
-Do **not** run extra API containers. Do **not** run a local MySQL for the app. Keep `MYSQL_CONNECTION_LIMIT=1` and `DB_SYNCHRONIZE=false`.
-
----
-
-## Stages (OTP vs DB)
-
-| Stage | `APP_ENV` | MySQL | Orange SSO + Maxit |
-|-------|-----------|-------|---------------------|
-| Development | `development` | Production DB | Production (`10.4.3.27`) |
-| Production | `production` | Same production DB | Same production Maxit (`10.4.3.27`) |
-| Preprod (staging) | `preprod` | Dedicated preprod DB (fill later) | Preprod APIs |
-
-Force OTP with `ORANGE_OTP_ENV=production` or `preprod`.
-
----
-
-## Local / server Compose (no scripts)
-
-```bash
-cd /opt/myboss   # or ~/myboss
-# siblings: myboss-backend, myboss-admin, myboss-platform
-
-cd myboss-platform
-cp .env.example .env   # fill secrets, or write .env from GitLab
-docker compose up -d --build
-curl http://127.0.0.1:3001/api/v1/health
-```
-
-Stop: `docker compose down`.  
-Logs: `docker compose logs -f api admin`.
-
-| Check | URL |
-|-------|-----|
-| API health | `http://127.0.0.1:3001/api/v1/health` |
-| Swagger (non-prod) | `http://127.0.0.1:3001/docs` |
-| Admin | `http://<DEMO_HOST>:8081/login` |
-
----
-
-## Admin image build args
-
-| Arg / env | Meaning |
-|-----------|---------|
-| `DEMO_HOST` | Public hostname or IP baked into the SPA |
-| `ADMIN_BUILD_MODE` | `demo` (laptop) or `production` |
-| `VITE_APP_ENV` | `development` / `preprod` / `production` |
-| `VITE_API_URL` | Optional override of `http://<DEMO_HOST>:3001/api/v1` |
+Preprod hosts: `10.1.112.95 preprod-notification.xyz.jt.jtgroup`
 
 ---
 

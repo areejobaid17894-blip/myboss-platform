@@ -136,23 +136,20 @@ Schema for remaining domain tables (`buildings`, `squads`, `squad_join_requests`
 
 ## 6. Local setup
 
-```bash
-cd myboss-platform/docker
-docker compose up -d mariadb redis
-```
+Use the shared corporate MySQL (`MYSQL_*` in `.env`). Do **not** run a local MariaDB or Redis container for this app.
 
 In `.env`:
 
 ```
 DB_ENABLED=true
-MARIADB_HOST=localhost
-MARIADB_PORT=3306
-MARIADB_DATABASE=myboss
-MARIADB_USER=myboss
-MARIADB_PASSWORD=changeme
+MYSQL_HOST=10.1.165.105
+MYSQL_PORT=3308
+MYSQL_DATABASE=my_boss
+MYSQL_USER=my_boss_app
+MYSQL_PASSWORD=FILL_FROM_DBA
 ```
 
-Use the shared corporate MySQL (`MYSQL_*`). Do not start a local MariaDB container.
+See [`INSTALL.md`](../INSTALL.md) and [`docker-compose.yml`](../../docker-compose.yml) for the two-container stack (`myboss-api`, `myboss-admin`).
 
 ---
 

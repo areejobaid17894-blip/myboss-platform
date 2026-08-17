@@ -1,17 +1,15 @@
 # Environment variables & GitLab CI/CD
 
-Same **key names** on development, preprod (staging), and production. Only values change.
+DevOps deploys **myboss-backend** and **myboss-admin** only (not this platform repo).  
+Same **key names** on development, preprod, and production. Inject as **container env at runtime** — not Docker build args.
 
-| Stage | Run template | GitLab template |
-|-------|--------------|-----------------|
-| Development | [`../../.env.development.example`](../../.env.development.example) | [`../devops/gitlab-development.env.example`](../devops/gitlab-development.env.example) |
-| Production | [`../../.env.production.example`](../../.env.production.example) | [`../devops/gitlab-production.env.example`](../devops/gitlab-production.env.example) |
-| Preprod (staging) | [`../../.env.preprod.example`](../../.env.preprod.example) | [`../devops/gitlab-preprod.env.example`](../devops/gitlab-preprod.env.example) |
+| Stage | GitLab template (backend) |
+|-------|---------------------------|
+| Preprod | [`../devops/gitlab-preprod.env.example`](../devops/gitlab-preprod.env.example) |
+| Production | [`../devops/gitlab-production.env.example`](../devops/gitlab-production.env.example) |
+| Development | [`../devops/gitlab-development.env.example`](../devops/gitlab-development.env.example) |
 
-Laptop: copy a stage file → `.env` (for example `copy .env.development.example .env`).  
-Server: GitLab **Settings → CI/CD → Variables** (mask secrets). DevOps CI/CD writes the runtime `.env`.
-
-Two containers: `myboss-api` (:3001) and `myboss-admin` (:8081). Both read the same `.env`. Admin Vite URLs are **build-time** (`DEMO_HOST`).
+Canonical copies: `myboss-backend/docs/gitlab/`. CSV: [`../devops/GITLAB_VARIABLES.csv`](../devops/GITLAB_VARIABLES.csv).
 
 ---
 
@@ -20,18 +18,19 @@ Two containers: `myboss-api` (:3001) and `myboss-admin` (:8081). Both read the s
 | | Development | Production | Preprod (staging) |
 |--|-------------|------------|-------------------|
 | `APP_ENV` | `development` | `production` | `preprod` |
-| MySQL | `10.1.165.105:3308` / `my_boss` | **same as development** | dedicated preprod DB (fill later) |
+| MySQL | `10.1.165.105:3308` / `my_boss` | **same as development** | `10.1.169.88:3308` / `my_boss_pre` / user `my_boss_app_pre` |
 | `ORANGE_OTP_ENV` | `production` | `production` | `preprod` |
-| SSO | `http://10.4.3.27:9001/sso/openid-connect/v1/token` | **same as development** | `http://10.1.112.95:9001/sso/openid-connect/v1/token` |
-| Email | `http://10.4.3.27:9001/maxit/notification/v1/email/send` | **same as development** | `http://preprod-notification.xyz.jt.jtgroup/email/send` |
-| `DEMO_HOST` | `127.0.0.1` or laptop LAN | prod hostname/IP | preprod hostname/IP |
-| `ADMIN_BUILD_MODE` | `demo` | `production` | `production` |
+| SSO | `http://10.4.3.27:9001/...` | **same** | `http://10.1.112.95:9001/...` |
+| Email | `http://10.4.3.27:9001/.../email/send` | **same** | `http://preprod-notification.xyz.jt.jtgroup/email/send` |
+| OTP recipient | Login email | Login email | Login email |
+| `VITE_API_URL` (admin **runtime**) | `http://127.0.0.1:3001/api/v1` | `TODO_DEPLOY_API_PUBLIC_URL/api/v1` | `TODO_PREPROD_API_PUBLIC_URL/api/v1` |
+| `CORS_ALLOWED_ORIGINS` | `http://127.0.0.1:8081,...` | `TODO_DEPLOY_ADMIN_PUBLIC_URL` | `TODO_PREPROD_ADMIN_PUBLIC_URL` |
 | `VITE_APP_ENV` | `development` | `production` | `preprod` |
-| `TWO_FA_DEMO_ENABLED` | `false` | `false` | `false` |
+| `SWAGGER_ENABLED` | default on (non-prod) | `false` | `false` |
 | `MYSQL_CONNECTION_LIMIT` | `1` | `1` | `1` |
 | `DB_SYNCHRONIZE` | `false` | `false` | `false` |
 
-Details: [`STAGES.md`](STAGES.md) · OTP curls: [`ORANGE_OTP_SETUP.md`](ORANGE_OTP_SETUP.md).
+**Production / preprod GitLab:** no `localhost` / `127.0.0.1` in any variable. Do not set `PORT` or `API_INTERNAL_URL`. Cluster listen port is K8s `APP_PORT=80`. `VITE_API_URL` and `CORS_ALLOWED_ORIGINS` are public ingress URLs only.
 
 ---
 
@@ -39,19 +38,18 @@ Details: [`STAGES.md`](STAGES.md) · OTP curls: [`ORANGE_OTP_SETUP.md`](ORANGE_O
 
 `MYSQL_PASSWORD`, `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, `ORANGE_SSO_CLIENT_SECRET`, `ORANGE_SSO_API_KEY`, `ORANGE_EMAIL_API_KEY`, `DEMO_ADMIN_PASSWORD`.
 
-Optional File variable `FCM_SERVICE_ACCOUNT_JSON` for push.
+---
+
+## Admin
+
+`VITE_API_URL` is read at **container runtime** (`/runtime-config.js`). Changing the API URL does **not** require rebuilding the admin image.
+
+Local Vite: `myboss-admin/.env.development`.
 
 ---
 
-## Admin (Vite)
+## Removed / unused
 
-Local: `myboss-admin/.env.development` (from `.env.example`).  
-Docker: bake `DEMO_HOST` / `VITE_APP_ENV` at image build.
-
-All `VITE_*_API_URL` values are `http://<host>:3001/api/v1`.
-
----
-
-## Mobile
-
-No `.env`. Use `--dart-define=API_HOST=<host>` (and `API_PORT=3001`). See `myboss-mobile/README.md`.
+- `REDIS_*`
+- `OTP_TEST_REDIRECT_EMAIL`
+- `ADMIN_BUILD_MODE`, `DEMO_HOST` (replaced by runtime `VITE_API_URL`)

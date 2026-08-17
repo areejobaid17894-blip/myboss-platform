@@ -1,8 +1,8 @@
 # Push notifications — Firebase setup
 
-Firebase project: **`my-boss-app-38576`** (test project)
+Firebase project: **`my-customer-my-boss`**
 
-Console: https://console.firebase.google.com/project/my-boss-app-38576
+Console: https://console.firebase.google.com/project/my-customer-my-boss
 
 ---
 
@@ -23,10 +23,10 @@ In-app notifications work without FCM. Push requires backend FCM enabled **and**
 
 | File | Location | Status |
 |------|----------|--------|
-| `google-services.json` | `myboss-mobile/android/app/` | ✅ Configured |
-| `firebase_options.dart` | `myboss-mobile/lib/` | ✅ Android configured |
-| Service account JSON | `myboss-platform/secrets/fcm-service-account.json` | ✅ Required for backend |
-| `GoogleService-Info.plist` | `myboss-mobile/ios/Runner/` | Add from Firebase Console |
+| `google-services.json` | `myboss-mobile/android/app/` | ✅ `my-customer-my-boss` |
+| `firebase_options.dart` | `myboss-mobile/lib/` | ✅ Android + iOS |
+| Service account JSON | `myboss-platform/secrets/fcm-service-account.json` | ⚠️ Must be Admin SDK for **this** project |
+| `GoogleService-Info.plist` | `myboss-mobile/ios/Runner/` | ✅ `my-customer-my-boss` |
 | APNs `.p8` key | Firebase Console → Cloud Messaging | ⚠️ Required for iOS push delivery |
 
 **Never commit** `secrets/fcm-service-account.json` or service account keys to git.
@@ -39,7 +39,7 @@ Add to **`myboss-platform/.env`** (Docker reads this file):
 
 ```env
 FCM_ENABLED=true
-FCM_PROJECT_ID=my-boss-app-38576
+FCM_PROJECT_ID=my-customer-my-boss
 FCM_SERVICE_ACCOUNT_PATH=/run/secrets/fcm-service-account.json
 NOTIFICATION_SERVICE_URL=http://127.0.0.1:3001/api/v1
 PUSH_DISPATCH_ENABLED=true

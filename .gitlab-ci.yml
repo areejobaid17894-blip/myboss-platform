@@ -12,6 +12,7 @@ verify:
     - test -f docs/devops/gitlab-development.env.example
     - test -f docs/devops/gitlab-preprod.env.example
     - test -f docs/devops/gitlab-production.env.example
+    - test -f docs/devops/CONNECTION_MATRIX.md
     - echo "Platform structure OK"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

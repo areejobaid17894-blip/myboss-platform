@@ -11,7 +11,14 @@ demo-public-url.txt
 *.log
 demo-tunnel*.pid
 docker/data/
-secrets/
+# secrets/ — real keys gitignored; templates and README are tracked
+secrets/*
+!secrets/README.md
+!secrets/*.example
+!secrets/*.example.json
+# tools/ — local binaries gitignored; README is tracked
+tools/*
+!tools/README.md
 scripts/_tmp-*
 DONE*
 Installing

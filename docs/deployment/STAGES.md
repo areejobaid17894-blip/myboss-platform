@@ -31,7 +31,7 @@ Filled local copies (gitignored): `.env.development`, `.env.production`, `.env.p
 |-------|-----------|-------|---------------------|
 | **Development** | `development` | Production DB (`10.1.165.105:3308` / `my_boss`) | **Production** (`10.4.3.27`) |
 | **Production** | `production` | **Same** production DB | **Same** production Maxit (`10.4.3.27`) |
-| **Preprod (staging)** | `preprod` | Dedicated preprod DB (fill when DBA provides it) | **Preprod APIs** (SSO `10.1.112.95`, email `preprod-notification.xyz.jt.jtgroup`) |
+| **Preprod (staging)** | `preprod` | Dedicated preprod DB (`10.1.169.88:3308` / `my_boss_pre` / `my_boss_app_pre`) | **Preprod APIs** (SSO `10.1.112.95`, email `preprod-notification.xyz.jt.jtgroup`) |
 
 Force OTP independently of `APP_ENV` with `ORANGE_OTP_ENV=production` or `preprod`.
 

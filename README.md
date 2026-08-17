@@ -1,23 +1,19 @@
 # myboss-platform
 
-Compose, env templates, and install/deploy docs for **my boss app**.
-
-**Runtime:** two containers — `myboss-api` (:3001) and `myboss-admin` (:8081).  
-**Deploy:** DevOps CI/CD (this repo has no deploy scripts).
+Laptop compose + docs only. **DevOps does not deploy this repo.**
 
 | Repo | Role |
 |------|------|
-| `myboss-backend` | NestJS API |
-| `myboss-admin` | Admin UI |
-| `myboss-platform` | Compose + `.env` + docs |
+| `myboss-backend` | NestJS API image (`docker/Dockerfile`) — **DevOps** |
+| `myboss-admin` | Admin UI image (`docker/Dockerfile`) — **DevOps** |
+| `myboss-platform` | Local Docker Compose + documentation |
 | `myboss-mobile` | Flutter employee app (not Docker) |
 
 | You are… | Read |
 |----------|------|
+| DevOps | [`myboss-backend/docs/gitlab/README.md`](https://github.com/areejobaid17894-blip/myboss-backend/-/blob/dev/docs/gitlab/README.md) |
 | Laptop | [`docs/INSTALL.md`](docs/INSTALL.md) |
-| DevOps / CI/CD | [`docs/devops/DEVOPS.md`](docs/devops/DEVOPS.md) |
 | GitLab variables | [`docs/deployment/ENV_AND_GITLAB_VARIABLES.md`](docs/deployment/ENV_AND_GITLAB_VARIABLES.md) |
-| Stages | [`docs/deployment/STAGES.md`](docs/deployment/STAGES.md) |
 
 ```bash
 cd myboss-platform

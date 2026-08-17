@@ -1,7 +1,6 @@
-# Two containers only: employee API (:3001) and admin UI (:8081).
-# Env: copy .env.development.example | .env.production.example | .env.preprod.example → .env
-# Run from this directory (siblings: ../myboss-backend, ../myboss-admin).
-# Secrets: never commit .env. DevOps CI/CD injects the same keys.
+# Laptop only. DevOps does not use this repo — they build myboss-backend and myboss-admin Dockerfiles.
+# Two containers: employee API (:3001) and admin UI (:8081).
+# Admin image has no build args; VITE_API_URL is injected at container runtime.
 
 services:
   api:
@@ -22,8 +21,6 @@ services:
       DEMO_GALLERY_TZ: Asia/Amman
     volumes:
       - myboss-data:/app/data
-      # Mount the folder (not the JSON path). Binding a missing file makes Docker
-      # create a directory named fcm-service-account.json, which breaks FCM.
       - ./secrets:/run/secrets:ro
     extra_hosts:
       - 'host.docker.internal:host-gateway'
@@ -33,15 +30,12 @@ services:
     build:
       context: ../myboss-admin
       dockerfile: docker/Dockerfile
-      args:
-        BUILD_MODE: ${ADMIN_BUILD_MODE:-demo}
-        DEMO_HOST: ${DEMO_HOST:-127.0.0.1}
-        VITE_APP_ENV: ${VITE_APP_ENV:-}
-        VITE_API_URL: ${VITE_API_URL:-}
-        VITE_API_GATEWAY_ORIGIN: ${VITE_API_GATEWAY_ORIGIN:-}
     container_name: myboss-admin
     restart: unless-stopped
     ports: ['8081:80']
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://127.0.0.1:3001/api/v1}
+      VITE_APP_ENV: ${VITE_APP_ENV:-development}
 
 volumes:
   myboss-data:
